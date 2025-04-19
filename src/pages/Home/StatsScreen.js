@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -13,10 +13,64 @@ import { formatDate } from '../../services';
 const StatsScreen = () => {
   const { theme, habits } = useContext(AppContext);
   const [timeframe, setTimeframe] = useState('week'); // week, month, year
+  const [chartData, setChartData] = useState([]);
+  const [xAxisLabels, setXAxisLabels] = useState([]);
 
-  // Dummy data for chart
-  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const completionData = [4, 3, 5, 2, 0, 0, 0]; // Completed habits per day
+  // Update chart data when timeframe changes
+  useEffect(() => {
+    generateChartData();
+  }, [timeframe, habits]);
+
+  // Generate chart data based on selected timeframe
+  const generateChartData = () => {
+    let data = [];
+    let labels = [];
+
+    switch (timeframe) {
+      case 'week':
+        labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        // Sample week data
+        data = [4, 3, 5, 2, 0, 0, 0];
+        break;
+      
+      case 'month':
+        // Show consecutive dates evenly distributed across the month
+        const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+        
+        // Option 1: Show consecutive days (e.g., 1, 2, 3, 4, 5...)
+        // Uncomment this section if you want consecutive days at the beginning of the month
+        /*
+        const daysToShow = Math.min(7, daysInMonth); // Show at most 7 days
+        for (let i = 1; i <= daysToShow; i++) {
+          labels.push(i.toString());
+        }
+        */
+        
+        // Option 2: Evenly distribute dates across the month
+        const totalBars = 7; // Number of bars to show
+        const interval = Math.floor(daysInMonth / (totalBars - 1));
+        
+        for (let i = 0; i < totalBars; i++) {
+          const day = Math.min(1 + (i * interval), daysInMonth);
+          labels.push(day.toString());
+        }
+        
+        // Sample month data (should match the number of labels)
+        data = Array(labels.length).fill(0).map(() => Math.floor(Math.random() * 10));
+        break;
+      
+      case 'year':
+        // Month abbreviations for the year
+        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        // Sample year data
+        data = Array(12).fill(0).map(() => Math.floor(Math.random() * 20) + 5);
+        break;
+    }
+
+    setChartData(data);
+    setXAxisLabels(labels);
+  };
 
   const getTotalCompletions = () => {
     return habits.reduce((total, habit) => total + habit.completedDates.length, 0);
@@ -25,9 +79,21 @@ const StatsScreen = () => {
   const getCompletionRate = () => {
     if (habits.length === 0) return 0;
     
-    const totalPossible = habits.length * 7; // Assuming daily for a week
-    const completed = getTotalCompletions();
+    let totalPossible;
+    switch (timeframe) {
+      case 'week':
+        totalPossible = habits.length * 7;
+        break;
+      case 'month':
+        const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+        totalPossible = habits.length * daysInMonth;
+        break;
+      case 'year':
+        totalPossible = habits.length * 365;
+        break;
+    }
     
+    const completed = getTotalCompletions();
     return Math.round((completed / totalPossible) * 100);
   };
 
@@ -42,25 +108,36 @@ const StatsScreen = () => {
   };
 
   const renderBarChart = () => {
-    const maxValue = Math.max(...completionData);
+    const maxValue = Math.max(...chartData);
     
     return (
       <View style={styles.chartContainer}>
         {/* Y-axis labels */}
         <View style={styles.yAxisLabels}>
-          {[maxValue, Math.floor(maxValue / 2), 0].map((value, index) => (
-            <Text 
-              key={index} 
-              style={[styles.axisLabel, { color: theme.text + '80' }]}
-            >
-              {value}
-            </Text>
-          ))}
+          {/* Using different scales based on timeframe */}
+          {timeframe === 'year' 
+            ? [maxValue, Math.floor(maxValue * 0.75), Math.floor(maxValue * 0.5), Math.floor(maxValue * 0.25), 0].map((value, index) => (
+                <Text 
+                  key={index} 
+                  style={[styles.axisLabel, { color: theme.text + '80' }]}
+                >
+                  {value}
+                </Text>
+              ))
+            : [maxValue, Math.floor(maxValue * 0.5), 0].map((value, index) => (
+                <Text 
+                  key={index} 
+                  style={[styles.axisLabel, { color: theme.text + '80' }]}
+                >
+                  {value}
+                </Text>
+              ))
+          }
         </View>
         
         {/* Bars */}
         <View style={styles.barsContainer}>
-          {completionData.map((value, index) => {
+          {chartData.map((value, index) => {
             const barHeight = maxValue > 0 ? (value / maxValue) * 150 : 0;
             
             return (
@@ -75,7 +152,7 @@ const StatsScreen = () => {
                   ]}
                 />
                 <Text style={[styles.axisLabel, { color: theme.text + '80' }]}>
-                  {weekDays[index]}
+                  {xAxisLabels[index]}
                 </Text>
               </View>
             );
@@ -157,9 +234,19 @@ const StatsScreen = () => {
 
         {/* Chart Card */}
         <Card style={styles.chartCard}>
-          <Text style={[styles.cardTitle, { color: theme.text }]}>
-            {timeframe === 'week' ? 'This Week' : timeframe === 'month' ? 'This Month' : 'This Year'} 
-          </Text>
+          <View style={styles.chartHeaderContainer}>
+            <Text style={[styles.cardTitle, { color: theme.text }]}>
+              {timeframe === 'week' ? 'This Week' : timeframe === 'month' ? 'This Month' : 'This Year'} 
+            </Text>
+            <Text style={[styles.chartSubtitle, { color: theme.text + '80' }]}>
+              {timeframe === 'week' 
+                ? 'Daily completions'
+                : timeframe === 'month'
+                  ? `Day of ${new Date().toLocaleString('default', { month: 'long' })}`
+                  : `Monthly completions in ${new Date().getFullYear()}`
+              }
+            </Text>
+          </View>
           {renderBarChart()}
         </Card>
 
@@ -169,9 +256,23 @@ const StatsScreen = () => {
           
           {habits.length > 0 ? (
             habits.map((habit) => {
-              // Calculate completion percentage (dummy calculation for demo)
+              // Calculate completion percentage based on timeframe
               const completed = habit.completedDates.length;
-              const total = timeframe === 'week' ? 7 : 30; // simplified
+              let total;
+              
+              switch(timeframe) {
+                case 'week':
+                  total = 7;
+                  break;
+                case 'month':
+                  const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+                  total = daysInMonth;
+                  break;
+                case 'year':
+                  total = 365;
+                  break;
+              }
+              
               const percentage = Math.min(100, Math.round((completed / total) * 100));
               
               return (
@@ -242,6 +343,14 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontWeight: '600',
+    marginBottom: 8,
+  },
+  chartHeaderContainer: {
+    marginBottom: 8,
+  },
+  chartSubtitle: {
+    fontSize: 14,
+    fontWeight: '400',
     marginBottom: 16,
   },
   statsGrid: {

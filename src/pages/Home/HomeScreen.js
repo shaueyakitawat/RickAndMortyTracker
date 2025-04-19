@@ -48,19 +48,167 @@ const DefaultTheme = THEMES[APP_MODES.PERSONAL_GROWTH];
 // This function provides a simple way to access theme styles safely
 const getThemeStyles = (themeObj, fallbackTheme = DefaultTheme) => {
   // If we have a valid theme from context, use it, otherwise use fallback
+  
+  // Define some presets for the unique themes
+  const NEON_CYBERPUNK = {
+    primary: '#00f2ff',
+    secondary: '#ff00e4',
+    background: '#0a0b2e',
+    text: '#ffffff',
+    textSecondary: '#b3b3ff',
+    card: '#151638',
+    cardShadow: 'rgba(0, 242, 255, 0.2)',
+    accent: '#ff9400',
+    completedColor: '#00f2ff',
+    gradientStart: '#ff00e4',
+    gradientEnd: '#00f2ff',
+  };
+  
+  const COSMIC_ENERGY = {
+    primary: '#8b5cf6',
+    secondary: '#c026d3',
+    background: '#130c25',
+    text: '#f8fafc',
+    textSecondary: '#cbd5e1',
+    card: '#1e1b2f',
+    cardShadow: 'rgba(139, 92, 246, 0.3)',
+    accent: '#f59e0b',
+    completedColor: '#a78bfa',
+    gradientStart: '#8b5cf6',
+    gradientEnd: '#c026d3',
+  };
+  
+  const DREAMSCAPE = {
+    primary: '#06b6d4',
+    secondary: '#0ea5e9',
+    background: '#f0fdfa',
+    text: '#334155',
+    textSecondary: '#64748b',
+    card: '#ffffff',
+    cardShadow: 'rgba(6, 182, 212, 0.2)',
+    accent: '#f472b6',
+    completedColor: '#06b6d4',
+    gradientStart: '#38bdf8',
+    gradientEnd: '#818cf8',
+  };
+  
+  const SUNSET_VIBES = {
+    primary: '#f97316',
+    secondary: '#fb923c',
+    background: '#fffbeb',
+    text: '#44403c',
+    textSecondary: '#78716c',
+    card: '#ffffff',
+    cardShadow: 'rgba(249, 115, 22, 0.2)',
+    accent: '#ec4899',
+    completedColor: '#f97316',
+    gradientStart: '#f97316',
+    gradientEnd: '#db2777',
+  };
+  
+  // Select theme based on current mode, or create something totally new
+  let selectedTheme;
+  
+  if (themeObj?.name === 'PERSONAL_GROWTH') {
+    selectedTheme = DREAMSCAPE;
+  } else if (themeObj?.name === 'ACTION') {
+    selectedTheme = NEON_CYBERPUNK;
+  } else if (themeObj?.name === 'COSMIC') {
+    selectedTheme = COSMIC_ENERGY;
+  } else if (themeObj?.name === 'SUNSET') {
+    selectedTheme = SUNSET_VIBES;
+  } else {
+    selectedTheme = fallbackTheme;
+  }
+  
   return {
     // Basic colors
-    text: themeObj?.text || fallbackTheme.text || '#333333',
-    textSecondary: themeObj?.textSecondary || fallbackTheme.textSecondary || '#666666',
-    primary: themeObj?.primary || fallbackTheme.primary || '#8b5cf6',
-    secondary: themeObj?.secondary || fallbackTheme.secondary || '#c4b5fd',
-    background: themeObj?.background || fallbackTheme.background || '#f5f3ff',
-    card: themeObj?.card || fallbackTheme.card || '#ffffff',
-    accent: themeObj?.accent || fallbackTheme.accent || '#a78bfa',
+    text: themeObj?.text || selectedTheme.text || fallbackTheme.text || '#333333',
+    textSecondary: themeObj?.textSecondary || selectedTheme.textSecondary || fallbackTheme.textSecondary || '#666666',
+    primary: themeObj?.primary || selectedTheme.primary || fallbackTheme.primary || '#8b5cf6',
+    secondary: themeObj?.secondary || selectedTheme.secondary || fallbackTheme.secondary || '#c4b5fd',
+    background: themeObj?.background || selectedTheme.background || fallbackTheme.background || '#f5f3ff',
+    card: themeObj?.card || selectedTheme.card || fallbackTheme.card || '#ffffff',
+    accent: themeObj?.accent || selectedTheme.accent || fallbackTheme.accent || '#a78bfa',
+    success: themeObj?.success || selectedTheme.success || fallbackTheme.success || '#10b981',
+    warning: themeObj?.warning || selectedTheme.warning || fallbackTheme.warning || '#f59e0b',
+    error: themeObj?.error || selectedTheme.error || fallbackTheme.error || '#ef4444',
+    info: themeObj?.info || selectedTheme.info || fallbackTheme.info || '#3b82f6',
+    border: themeObj?.border || selectedTheme.border || fallbackTheme.border || '#e9e4ff',
+    buttonText: themeObj?.buttonText || selectedTheme.buttonText || fallbackTheme.buttonText || '#ffffff',
+    cardShadow: themeObj?.cardShadow || selectedTheme.cardShadow || fallbackTheme.cardShadow || 'rgba(0, 0, 0, 0.1)',
+    gradientStart: themeObj?.gradientStart || selectedTheme.gradientStart || fallbackTheme.gradientStart || '#a78bfa',
+    gradientEnd: themeObj?.gradientEnd || selectedTheme.gradientEnd || fallbackTheme.gradientEnd || '#8b5cf6',
+    divider: themeObj?.divider || selectedTheme.divider || fallbackTheme.divider || '#e5e7eb',
+    iconBackground: themeObj?.iconBackground || selectedTheme.iconBackground || fallbackTheme.iconBackground || '#f3f0ff',
+    completedColor: themeObj?.completedColor || selectedTheme.completedColor || fallbackTheme.completedColor || '#10b981',
+    incompletedColor: themeObj?.incompletedColor || selectedTheme.incompletedColor || fallbackTheme.incompletedColor || '#e5e7eb',
+    progressTrack: themeObj?.progressTrack || selectedTheme.progressTrack || fallbackTheme.progressTrack || '#f3f0ff',
+    badgeBackground: themeObj?.badgeBackground || selectedTheme.badgeBackground || fallbackTheme.badgeBackground || '#f3f0ff',
+    cardHeader: themeObj?.cardHeader || selectedTheme.cardHeader || fallbackTheme.cardHeader || '#f5f3ff',
+    
+    // UI styles
+    borderRadius: themeObj?.borderRadius || selectedTheme.borderRadius || fallbackTheme.borderRadius || 16,
+    cardElevation: themeObj?.cardElevation || selectedTheme.cardElevation || fallbackTheme.cardElevation || 4,
+    buttonElevation: themeObj?.buttonElevation || selectedTheme.buttonElevation || fallbackTheme.buttonElevation || 6,
+    
+    // Typography
+    fontFamily: themeObj?.fontFamily || selectedTheme.fontFamily || fallbackTheme.fontFamily || {
+      regular: 'System',
+      medium: 'System',
+      bold: 'System',
+    },
+    fontSize: themeObj?.fontSize || selectedTheme.fontSize || fallbackTheme.fontSize || {
+      h1: 28,
+      h2: 24,
+      h3: 20,
+      h4: 18,
+      body: 16,
+      caption: 14,
+      small: 12,
+    },
+    fontWeight: themeObj?.fontWeight || selectedTheme.fontWeight || fallbackTheme.fontWeight || {
+      light: '300',
+      regular: '400',
+      medium: '500',
+      semibold: '600',
+      bold: '700',
+    },
+    headingStyle: themeObj?.headingStyle || selectedTheme.headingStyle || fallbackTheme.headingStyle || {
+      letterSpacing: 0.2,
+      lineHeight: 1.4,
+    },
+    
+    // Special effects for the new theme system
+    glassmorphism: {
+      backgroundColor: themeObj?.glassBg || 'rgba(255, 255, 255, 0.1)',
+      borderColor: themeObj?.glassBorder || 'rgba(255, 255, 255, 0.2)',
+      backdropFilter: 'blur(8px)',
+    },
+    
+    neomorphism: {
+      lightShadow: themeObj?.neoLightShadow || 'rgba(255, 255, 255, 0.7)',
+      darkShadow: themeObj?.neoDarkShadow || 'rgba(0, 0, 0, 0.1)',
+      intensity: themeObj?.neoIntensity || 0.2,
+    },
+    
+    // Animation presets
+    animation: {
+      duration: {
+        fast: 300,
+        medium: 500,
+        slow: 700,
+      },
+      easing: {
+        bounce: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+        elastic: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+        smooth: 'cubic-bezier(0.4, 0.0, 0.2, 1)',
+      },
+    },
     
     // Helper method for semi-transparent colors
     withOpacity: (color, opacity) => {
-      const baseColor = themeObj?.[color] || fallbackTheme[color];
+      const baseColor = themeObj?.[color] || selectedTheme[color] || fallbackTheme[color];
       return baseColor ? baseColor + opacity : fallbackTheme.text + opacity;
     }
   };
@@ -72,12 +220,14 @@ const HomeScreen = () => {
   // Create a theme helper that will work even if theme is undefined
   const themeStyles = getThemeStyles(theme);
   const [currentStreak, setCurrentStreak] = useState(0);
-  const [todayHabits, setTodayHabits] = useState([]);
   const [completedToday, setCompletedToday] = useState(0);
   const [fadeAnim] = useState(new Animated.Value(0));
   const [refreshing, setRefreshing] = useState(false);
   const [weather, setWeather] = useState(null);
-  const [quote, setQuote] = useState(null);
+  const [quote, setQuote] = useState({
+    text: "Habits are the compound interest of self-improvement.",
+    author: "James Clear"
+  });
   const [dateTime, setDateTime] = useState(new Date());
   const [showTips, setShowTips] = useState(true);
   const [waterIntake, setWaterIntake] = useState(0);
@@ -95,6 +245,72 @@ const HomeScreen = () => {
   // Animated values for interactive UI
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const windowDimensions = useWindowDimensions();
+
+  // Add a new state for calendar streak
+  const [calendarStreak, setCalendarStreak] = useState([
+    { date: '2023-08-15', completed: true },
+    { date: '2023-08-16', completed: true },
+    { date: '2023-08-17', completed: true },
+    { date: '2023-08-18', completed: true },
+    { date: '2023-08-19', completed: false }, // weekend
+    { date: '2023-08-20', completed: false }, // weekend
+    { date: '2023-08-21', completed: true },
+    { date: '2023-08-22', completed: true },
+    { date: '2023-08-23', completed: true },
+    { date: '2023-08-24', completed: true },
+    { date: '2023-08-25', completed: true },
+    { date: '2023-08-26', completed: false }, // weekend
+    { date: '2023-08-27', completed: false }, // weekend
+    { date: '2023-08-28', completed: true }
+  ]);
+
+  // Add after the getDayName function
+  const getDaysInMonth = (year, month) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  const getMonthCalendarDays = () => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+    const totalDays = getDaysInMonth(currentYear, currentMonth);
+    
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+    const calendarDays = [];
+    
+    // Add empty spaces for days before the 1st of the month
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      calendarDays.push({ date: null, empty: true });
+    }
+    
+    // Add all days of the month
+    for (let day = 1; day <= totalDays; day++) {
+      const date = new Date(currentYear, currentMonth, day);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      // Check if there's a habit completed on this day
+      const hasCompletedHabit = habits.some(habit => 
+        habit.completedDates.includes(dateStr)
+      );
+      
+      calendarDays.push({
+        date: dateStr,
+        dayNumber: day,
+        isToday: day === today.getDate(),
+        completed: hasCompletedHabit
+      });
+    }
+    
+    return calendarDays;
+  };
+
+  // Add a new state for the full month calendar
+  const [monthCalendar, setMonthCalendar] = useState([]);
+  
+  // Update the loadData function to also set the month calendar
+  useEffect(() => {
+    setMonthCalendar(getMonthCalendarDays());
+  }, [habits]);
 
   // Load dummy data for demo
   useEffect(() => {
@@ -216,16 +432,30 @@ const HomeScreen = () => {
 
   // Load data function for pull to refresh
   const loadData = () => {
-    // Calculate streak
-    const allCompletedDates = habits.reduce(
-      (dates, habit) => [...dates, ...habit.completedDates],
-      []
-    );
-    const streak = getStreakCount(allCompletedDates);
+    // Generate last 7 days for the streak calendar (excluding current date)
+    const today = new Date();
+    const last7Days = Array(7).fill().map((_, i) => {
+      const date = new Date();
+      date.setDate(today.getDate() - (6 - i));
+      return date.toISOString().split('T')[0];
+    });
+    
+    // Check if each day has at least one completed habit
+    const streakData = last7Days.map(day => {
+      const hasCompletedHabit = habits.some(habit => habit.completedDates.includes(day));
+      return {
+        date: day,
+        completed: hasCompletedHabit
+      };
+    });
+    
+    setCalendarStreak(streakData);
+
+    // Calculate streak using the improved function
+    const streak = calculateImprovedStreak(habits);
     setCurrentStreak(streak);
 
     // Get today's habits based on current mode
-    const today = new Date();
     const filteredHabits = habits.filter(habit => 
       (habit.frequency === 'daily' || 
        (habit.frequency === 'weekly' && today.getDay() === 1)) // Show weekly habits on Monday
@@ -241,6 +471,9 @@ const HomeScreen = () => {
     ).length;
     
     setCompletedToday(completed);
+    
+    // Update the monthly calendar
+    setMonthCalendar(getMonthCalendarDays());
   };
 
   // Re-animate when mode changes
@@ -292,23 +525,50 @@ const HomeScreen = () => {
       }),
     ]).start();
 
-    const newMode = currentMode === APP_MODES.PERSONAL_GROWTH 
-      ? APP_MODES.ACTION 
-      : APP_MODES.PERSONAL_GROWTH;
+    // Cycle through modes:
+    // PERSONAL_GROWTH -> ACTION -> COSMIC -> SUNSET
+    let newMode;
+    if (currentMode === APP_MODES.PERSONAL_GROWTH) {
+      newMode = APP_MODES.ACTION;
+    } else if (currentMode === APP_MODES.ACTION) {
+      newMode = 'COSMIC'; // New custom mode
+    } else if (currentMode === 'COSMIC') {
+      newMode = 'SUNSET'; // Another custom mode
+    } else {
+      newMode = APP_MODES.PERSONAL_GROWTH;
+    }
     
     switchMode(newMode);
   };
 
   const getModeIcon = () => {
-    return currentMode === APP_MODES.PERSONAL_GROWTH
-      ? 'leaf-outline'
-      : 'flash-outline';
+    switch(currentMode) {
+      case APP_MODES.PERSONAL_GROWTH:
+        return 'leaf-outline';
+      case APP_MODES.ACTION:
+        return 'flash-outline';
+      case 'COSMIC':
+        return 'planet-outline';
+      case 'SUNSET':
+        return 'sunny-outline';
+      default:
+        return 'leaf-outline';
+    }
   };
 
   const getModeDescription = () => {
-    return currentMode === APP_MODES.PERSONAL_GROWTH
-      ? 'Focus on mindful progress with a calm approach'
-      : 'Maximize productivity with high energy';
+    switch(currentMode) {
+      case APP_MODES.PERSONAL_GROWTH:
+        return 'Grow mindfully with a calm approach';
+      case APP_MODES.ACTION:
+        return 'High-energy productivity mode';
+      case 'COSMIC':
+        return 'Expand your consciousness & potential';
+      case 'SUNSET':
+        return 'Creativity & inspiration mode';
+      default:
+        return 'Focus on mindful progress';
+    }
   };
 
   const handleHabitCheck = (habitId) => {
@@ -350,10 +610,29 @@ const HomeScreen = () => {
   };
 
   const increaseWaterIntake = () => {
-    setWaterIntake(prev => prev + 1);
-    if (waterIntake === 7) {
-      Alert.alert('Great job!', 'You\'ve met your water intake goal for today!');
-    }
+    setWaterIntake(prev => {
+      // Only increase if we haven't hit the max
+      if (prev < 8) {
+        // If we just completed the goal, show a success message and award points
+        if (prev === 7) {
+          setUserPoints(prevPoints => prevPoints + 5);
+          setLastRewardPoints(5);
+          setRewardNotification(true);
+          setTimeout(() => setRewardNotification(false), 3000);
+          Alert.alert('Great job!', 'You\'ve met your water intake goal for today!');
+        } else if (prev === 3) {
+          // Midway encouragement
+          Alert.alert('Halfway there!', 'Keep going with your water intake!');
+        } else {
+          // Subtle feedback
+          Platform.OS === 'ios' ? 
+            Alert.alert('Water intake logged!', `${prev + 1} of 8 glasses completed.`) :
+            console.log(`Water intake: ${prev + 1}/8 glasses`);
+        }
+        return prev + 1;
+      }
+      return prev;
+    });
   };
 
   // Handle reward earned callback
@@ -367,7 +646,7 @@ const HomeScreen = () => {
     }, 3000);
   };
 
-  // Update the toggleHabitCompletion function to work with our mock Firebase implementation
+  // Update the toggleHabitCompletion function to have better feedback
   const toggleHabitCompletion = async (habitId) => {
     try {
       const today = new Date().toISOString().split('T')[0];
@@ -377,14 +656,39 @@ const HomeScreen = () => {
         const habit = {...todayHabits[habitIndex]};
         const isCompleted = habit.completedDates.includes(today);
         
+        // Haptic feedback would be added here in a real app
+        
         // Toggle completion status
         let updatedCompletedDates = [...habit.completedDates];
         if (isCompleted) {
           // Remove today's date if already completed
           updatedCompletedDates = updatedCompletedDates.filter(date => date !== today);
+          // Show a message when unchecking
+          Alert.alert('Habit Unmarked', `"${habit.title}" has been marked as incomplete.`);
         } else {
           // Add today's date if not completed
           updatedCompletedDates.push(today);
+          
+          // Add a streak milestone message
+          const newStreak = calculateStreak([...updatedCompletedDates]);
+          if (newStreak === 3) {
+            Alert.alert('Streak Milestone!', `You've completed "${habit.title}" for 3 days in a row! Keep it up!`);
+          } else if (newStreak === 7) {
+            Alert.alert('Impressive Streak!', `7 day streak for "${habit.title}"! You're building a solid habit!`);
+            // Give extra points for 7-day streak
+            setUserPoints(prev => prev + 10);
+            setLastRewardPoints(10);
+            setRewardNotification(true);
+          } else if (newStreak === 21) {
+            Alert.alert('Habit Master!', `21 days of "${habit.title}"! Science says you've formed a true habit!`);
+            // Give extra points for 21-day streak
+            setUserPoints(prev => prev + 20);
+            setLastRewardPoints(20);
+            setRewardNotification(true);
+          } else {
+            // Regular completion message
+            Alert.alert('Habit Completed!', `Great job completing "${habit.title}"!`);
+          }
         }
         
         // This logs the update to the console, simulating a database update
@@ -410,31 +714,121 @@ const HomeScreen = () => {
         setTodayHabits(updatedTodayHabits);
         
         // Update completed count
-        setCompletedToday(updatedCompletedDates.includes(today) 
-          ? completedToday + 1 
-          : completedToday - 1);
+        setCompletedToday(isCompleted ? completedToday - 1 : completedToday + 1);
+        
+        // Update the calendar to reflect the new completion status
+        setMonthCalendar(getMonthCalendarDays());
           
         // Show animation if completing a habit
         if (!isCompleted) {
-          // Show completion animation and add points
-          setShowRewards(true);
-          setUserPoints(prev => prev + 5); // Add points when completing a habit
+          // Add points when completing a habit
+          setUserPoints(prev => prev + 5);
           setLastRewardPoints(5);
           setRewardNotification(true);
           
-          // Hide notifications after some time
+          // Hide notification after some time
           setTimeout(() => {
-            setShowRewards(false);
             setRewardNotification(false);
           }, 2000);
         }
       }
     } catch (error) {
       console.error('Error toggling habit completion:', error);
+      Alert.alert('Error', 'There was a problem updating your habit. Please try again.');
     }
   };
 
-  // Add after the toggleHabitCompletion function
+  // Improved streak calculation that handles daily habits better
+  const calculateImprovedStreak = (habits) => {
+    if (!habits || habits.length === 0) return 0;
+    
+    // Get all dates where at least one habit was completed
+    const allCompletionDates = new Set();
+    habits.forEach(habit => {
+      habit.completedDates.forEach(date => {
+        allCompletionDates.add(date);
+      });
+    });
+    
+    // Convert to array and sort in descending order (newest first)
+    const sortedDates = Array.from(allCompletionDates).sort((a, b) => 
+      new Date(b).getTime() - new Date(a).getTime()
+    );
+    
+    if (sortedDates.length === 0) return 0;
+    
+    // Check if today or yesterday has a completion
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    today.setDate(today.getDate() - 1);
+    const yesterdayStr = today.toISOString().split('T')[0];
+    
+    const hasToday = sortedDates.includes(todayStr);
+    const hasYesterday = sortedDates.includes(yesterdayStr);
+    
+    // If neither today nor yesterday has a completion, streak is 0
+    if (!hasToday && !hasYesterday) return 0;
+    
+    // Start with current streak as 1 if today has completion, otherwise 0
+    let currentStreak = hasToday ? 1 : 0;
+    
+    // If we're counting from yesterday, add it to the streak
+    if (hasYesterday && (!hasToday || currentStreak === 0)) {
+      currentStreak = 1;
+    }
+    
+    // Start checking from yesterday or the day before, depending on our starting point
+    let dateToCheck = new Date(hasToday ? todayStr : yesterdayStr);
+    dateToCheck.setDate(dateToCheck.getDate() - 1);
+    
+    // Continue checking previous days until we find a gap
+    while (true) {
+      const dateStr = dateToCheck.toISOString().split('T')[0];
+      
+      if (sortedDates.includes(dateStr)) {
+        currentStreak++;
+        // Move to the previous day
+        dateToCheck.setDate(dateToCheck.getDate() - 1);
+      } else {
+        // Found a gap in the streak
+        break;
+      }
+    }
+    
+    return currentStreak;
+  };
+
+  // Add this function after calculateStreak
+  const handleAcceptChallenge = () => {
+    // Show a success message
+    Alert.alert('Challenge Accepted!', 
+      `You've accepted the daily ${currentMode === APP_MODES.PERSONAL_GROWTH ? 'boost' : 'challenge'}. 
+      Complete it to earn extra points!`
+    );
+    
+    // Award points for accepting the challenge
+    setUserPoints(prev => prev + 3);
+    setLastRewardPoints(3);
+    setRewardNotification(true);
+    
+    // Hide notification after 3 seconds
+    setTimeout(() => {
+      setRewardNotification(false);
+    }, 3000);
+    
+    // In a real app, this would also update the backend
+    // navigation.navigate('Habits');
+  };
+
+  // Add a function to format day name
+  const getDayName = (dateString) => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const date = new Date(dateString);
+    return days[date.getDay()];
+  };
+
+  // Streak calculation for individual habits
   const calculateStreak = (completedDates) => {
     if (!completedDates || completedDates.length === 0) return 0;
     
@@ -474,34 +868,60 @@ const HomeScreen = () => {
     return streak;
   };
 
-  // Add this function after calculateStreak
-  const handleAcceptChallenge = () => {
-    // Show a success message
-    Alert.alert('Challenge Accepted!', 
-      `You've accepted the daily ${currentMode === APP_MODES.PERSONAL_GROWTH ? 'boost' : 'challenge'}. 
-      Complete it to earn extra points!`
-    );
+  // Add a safety check for habits
+  const [todayHabits, setTodayHabits] = useState([]);
+
+  // Add a basic error handler to help with debugging
+  useEffect(() => {
+    // Add error boundary using try-catch
+    const handleRender = () => {
+      try {
+        // Validate critical data
+        if (!habits) {
+          console.warn('HomeScreen: habits is null or undefined');
+          setHabits([]);
+        }
+        
+        if (!todayHabits) {
+          console.warn('HomeScreen: todayHabits is null or undefined');
+          setTodayHabits([]);
+        }
+        
+        // Calculate streak safely
+        const calculatedStreak = calculateImprovedStreak(habits || []);
+        setCurrentStreak(calculatedStreak);
+      } catch (error) {
+        console.error('HomeScreen rendering error:', error);
+        // Set fallback values
+        setCurrentStreak(0);
+      }
+    };
     
-    // Award points for accepting the challenge
-    setUserPoints(prev => prev + 3);
-    setLastRewardPoints(3);
-    setRewardNotification(true);
-    
-    // Hide notification after 3 seconds
-    setTimeout(() => {
-      setRewardNotification(false);
-    }, 3000);
-    
-    // In a real app, this would also update the backend
-    // navigation.navigate('Habits');
-  };
+    handleRender();
+  }, [habits, todayHabits]);
+
+  // Add a conditional check around showTips
+  {showTips && (
+    <Card style={styles.tipsCard}>
+      {/* Card content */}
+    </Card>
+  )}
 
   return (
-    <View style={[styles.container, { backgroundColor: themeStyles.background }]}>
+    <View style={[styles.container, { 
+      backgroundColor: themeStyles.background,
+      paddingTop: Platform.OS === 'ios' ? normalize(8) : 0
+    }]}>
       <Header 
         title="Rick&Morty" 
         rightIcon="trophy-outline"
         onRightIconPress={() => setShowRewards(!showRewards)}
+        style={{ 
+          backgroundColor: themeStyles.withOpacity('card', '90'),
+          borderBottomColor: themeStyles.withOpacity('primary', '20'),
+          borderBottomWidth: 1
+        }}
+        titleStyle={{ color: themeStyles.primary }}
       />
       
       {/* Reward notification */}
@@ -509,7 +929,16 @@ const HomeScreen = () => {
         <Animated.View 
           style={[
             styles.rewardNotification,
-            { backgroundColor: themeStyles.primary }
+            { 
+              backgroundColor: themeStyles.withOpacity('primary', 'DD'),
+              borderWidth: 1,
+              borderColor: themeStyles.withOpacity('secondary', '50'),
+              shadowColor: themeStyles.primary,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.4,
+              shadowRadius: 8,
+              elevation: 10,
+            }
           ]}
         >
           <Ionicons name="trophy" size={normalize(16)} color="#FFF" />
@@ -520,17 +949,24 @@ const HomeScreen = () => {
       )}
       
       {showRewards ? (
-        <Card style={styles.rewardsCard}>
+        <Card style={[styles.rewardsCard, { 
+          backgroundColor: themeStyles.card,
+          borderColor: themeStyles.withOpacity('primary', '30'),
+          borderWidth: 1,
+        }]}>
           <RewardsSystem 
             habits={habits}
             streakCount={currentStreak}
             waterIntake={waterIntake}
             onRewardEarned={handleRewardEarned}
+            theme={themeStyles}
           />
         </Card>
       ) : (
         <Animated.ScrollView 
-          style={[styles.scrollView, { opacity: fadeAnim }]} 
+          style={[styles.scrollView, { 
+            opacity: fadeAnim 
+          }]} 
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -541,11 +977,200 @@ const HomeScreen = () => {
             />
           }
         >
-          <View style={styles.greetingContainer}>
-            <Text style={[styles.greeting, { color: themeStyles.text, fontSize: normalize(28) }]}>{getGreeting()}</Text>
-            <Text style={[styles.modeName, { color: themeStyles.primary, fontSize: normalize(16) }]}>
-              {currentMode === APP_MODES.PERSONAL_GROWTH ? 'Personal Growth Mode' : 'Action Mode'}
-            </Text>
+          <View 
+            style={[styles.greetingContainer, {
+              backgroundColor: 'transparent',
+              marginTop: normalize(16),
+            }]}>
+            <View style={{
+              backgroundColor: themeStyles.withOpacity('primary', '10'),
+              borderRadius: themeStyles.borderRadius,
+              padding: normalize(16),
+              borderLeftWidth: 3,
+              borderLeftColor: themeStyles.primary,
+              shadowColor: themeStyles.primary,
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 10,
+            }}>
+              <Text style={[styles.greeting, { 
+                fontSize: normalize(28),
+                fontWeight: 'bold',
+                color: themeStyles.primary,
+              }]}>{getGreeting()}</Text>
+              <Text style={[styles.modeName, { 
+                color: themeStyles.primary, 
+                fontSize: normalize(16),
+                fontWeight: '600'
+              }]}>
+                {currentMode === APP_MODES.PERSONAL_GROWTH 
+                  ? 'Personal Growth Mode' 
+                  : currentMode === APP_MODES.ACTION 
+                    ? 'Action Mode' 
+                    : currentMode === 'COSMIC' 
+                      ? 'Cosmic Energy Mode' 
+                      : 'Sunset Vibes Mode'
+                }
+              </Text>
+            </View>
+          </View>
+
+          {/* Monthly Calendar Card */}
+          <View style={{marginBottom: normalize(16)}}>
+            <Card style={[styles.calendarCard, {
+              backgroundColor: themeStyles.card,
+              borderRadius: themeStyles.borderRadius,
+              shadowColor: themeStyles.cardShadow,
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.3,
+              shadowRadius: 12,
+              elevation: 16,
+              borderWidth: 1,
+              borderColor: themeStyles.withOpacity('primary', '30'),
+              overflow: 'hidden',
+            }]}>
+              <View style={{
+                backgroundColor: themeStyles.withOpacity('card', 'FF'),
+                padding: normalize(14)
+              }}>
+                <View style={styles.calendarHeader}>
+                  <View style={styles.calendarTitleContainer}>
+                    <Ionicons name="calendar" size={normalize(18)} color={themeStyles.primary} />
+                    <Text style={[styles.calendarTitle, { color: themeStyles.text, fontSize: normalize(14) }]}>
+                      Monthly Progress
+                    </Text>
+                  </View>
+                  <Animated.View 
+                    style={[
+                      styles.calendarBadge,
+                      { 
+                        backgroundColor: themeStyles.primary,
+                        borderRadius: normalize(12),
+                        paddingHorizontal: normalize(8),
+                        paddingVertical: normalize(4),
+                      }
+                    ]}
+                  >
+                    <Text style={[styles.calendarBadgeText, { color: '#FFF' }]}>
+                      {currentStreak} day streak
+                    </Text>
+                  </Animated.View>
+                </View>
+
+                <View style={styles.calendarWrapper}>
+                  <View style={styles.calendarLeft}>
+                    <Text style={[styles.calendarDescription, { color: themeStyles.textSecondary }]}>
+                      {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    </Text>
+                    
+                    <Text style={[styles.streakInfo, { color: themeStyles.text }]}>
+                      <Text style={{ fontWeight: 'bold', color: themeStyles.primary }}>{completedToday}</Text> completed today
+                    </Text>
+
+                    <Text style={[styles.streakInfo, { color: themeStyles.text, marginTop: normalize(4) }]}>
+                      Current streak: <Text style={{ fontWeight: 'bold', color: themeStyles.primary }}>{currentStreak}</Text> days
+                    </Text>
+                    
+                    <TouchableOpacity 
+                      style={[
+                        styles.calendarButton, 
+                        { 
+                          backgroundColor: themeStyles.progressTrack,
+                          borderRadius: themeStyles.borderRadius,
+                          marginTop: normalize(8)
+                        }
+                      ]}
+                      onPress={() => {
+                        setUserPoints(prev => prev + 2);
+                        setLastRewardPoints(2);
+                        setRewardNotification(true);
+                        setTimeout(() => setRewardNotification(false), 3000);
+                        Alert.alert('Streak Bonus!', 'You earned 2 points for checking your progress today!');
+                      }}
+                    >
+                      <Text style={[
+                        styles.calendarButtonText, 
+                        { 
+                          color: themeStyles.primary,
+                          fontWeight: themeStyles.fontWeight.semibold,
+                          fontSize: normalize(12)
+                        }
+                      ]}>
+                        Claim Bonus (+2 pts)
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <View style={styles.calendarRight}>
+                    {/* Day names row */}
+                    <View style={styles.calendarDayNames}>
+                      {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                        <Text 
+                          key={index} 
+                          style={[
+                            styles.calendarDayName, 
+                            { 
+                              color: index === 0 || index === 6 
+                                ? themeStyles.primary + 'AA' 
+                                : themeStyles.textSecondary
+                            }
+                          ]}
+                        >
+                          {day}
+                        </Text>
+                      ))}
+                    </View>
+                    
+                    {/* Calendar grid */}
+                    <View style={styles.calendarGrid}>
+                      {monthCalendar.map((day, index) => (
+                        <View 
+                          key={index} 
+                          style={[
+                            styles.calendarDay,
+                            day.empty && styles.calendarDayEmpty
+                          ]}
+                        >
+                          {!day.empty && (
+                            <View style={[
+                              styles.calendarDayCircle,
+                              day.isToday && { 
+                                borderColor: themeStyles.primary,
+                                borderWidth: 1
+                              },
+                              day.completed && { 
+                                backgroundColor: themeStyles.primary + '20'
+                              }
+                            ]}>
+                              <Text style={[
+                                styles.calendarDayNumber,
+                                { 
+                                  color: day.completed 
+                                    ? themeStyles.primary 
+                                    : day.isToday 
+                                      ? themeStyles.primary
+                                      : themeStyles.text 
+                                },
+                                day.isToday && { fontWeight: 'bold' }
+                              ]}>
+                                {day.dayNumber}
+                              </Text>
+                              {day.completed && (
+                                <View style={[
+                                  styles.calendarCompletedDot,
+                                  { backgroundColor: themeStyles.completedColor }
+                                ]} />
+                              )}
+                            </View>
+                          )}
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </Card>
           </View>
 
           {/* Date & Weather Card */}
@@ -570,145 +1195,296 @@ const HomeScreen = () => {
             </View>
           </Card>
 
-          {/* Mode Switcher Card */}
-          <Animated.View style={{transform: [{scale: scaleAnim}]}}>
-            <Card style={styles.modeCard}>
-              <View style={styles.modeContent}>
-                <View style={styles.modeIconContainer}>
-                  <View style={[
-                    styles.modeIconCircle, 
-                    { backgroundColor: themeStyles.primary + '20' }
-                  ]}>
-                    <Ionicons name={getModeIcon()} size={normalize(24)} color={DefaultTheme.primary} />
-                  </View>
-                </View>
-                <View style={styles.modeInfo}>
-                  <Text style={[styles.modeTitle, { color: themeStyles.text, fontSize: normalize(16) }]}>
-                    {currentMode === APP_MODES.PERSONAL_GROWTH ? 'Personal Growth' : 'Action Mode'}
-                  </Text>
-                  <Text style={[styles.modeDescription, { color: themeStyles.text + '99', fontSize: normalize(14) }]}>
-                    {getModeDescription()}
-                  </Text>
-                </View>
-                <TouchableOpacity 
-                  style={[styles.modeSwitchButton, { backgroundColor: themeStyles.primary }]}
-                  onPress={toggleAppMode}
+          {/* Mode Switcher Card with enhanced styling */}
+          <View style={{marginBottom: normalize(16)}}>
+            <Card style={[
+              styles.modeCard, 
+              { 
+                overflow: 'hidden',
+                borderRadius: themeStyles.borderRadius,
+              }
+            ]}>
+              <View style={{
+                borderWidth: 2, 
+                borderColor: themeStyles.withOpacity('primary', '30'),
+                backgroundColor: themeStyles.withOpacity('card', 'FF'),
+                shadowColor: themeStyles.primary,
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.3,
+                shadowRadius: 12,
+                elevation: 10,
+                borderRadius: themeStyles.borderRadius,
+              }}>
+                <Animated.View 
+                  style={{
+                    transform: [{scale: scaleAnim}],
+                    padding: normalize(12),
+                  }}
                 >
-                  <Ionicons 
-                    name="swap-horizontal" 
-                    size={normalize(18)} 
-                    color="#fff" 
-                  />
-                </TouchableOpacity>
+                  <View style={styles.modeContent}>
+                    <View style={styles.modeIconContainer}>
+                      <View style={[
+                        styles.modeIconCircle, 
+                        { 
+                          backgroundColor: themeStyles.withOpacity('primary', '30'),
+                          borderRadius: themeStyles.borderRadius,
+                          borderWidth: 1,
+                          borderColor: themeStyles.withOpacity('primary', '50'),
+                        }
+                      ]}>
+                        <Ionicons 
+                          name={getModeIcon()} 
+                          size={normalize(24)} 
+                          color={themeStyles.primary} 
+                        />
+                      </View>
+                    </View>
+                    <View style={styles.modeInfo}>
+                      <Text style={[
+                        styles.modeTitle, 
+                        { 
+                          color: themeStyles.text, 
+                          fontSize: normalize(16),
+                          fontWeight: '600'
+                        }
+                      ]}>
+                        {currentMode === APP_MODES.PERSONAL_GROWTH 
+                          ? 'Personal Growth Mode' 
+                          : currentMode === APP_MODES.ACTION 
+                            ? 'Action Mode' 
+                            : currentMode === 'COSMIC' 
+                              ? 'Cosmic Energy Mode' 
+                              : 'Sunset Vibes Mode'
+                        }
+                      </Text>
+                      <Text style={[
+                        styles.modeDescription, 
+                        { 
+                          color: themeStyles.textSecondary, 
+                          fontSize: normalize(14) 
+                        }
+                      ]}>
+                        {getModeDescription()}
+                      </Text>
+                    </View>
+                    <TouchableOpacity 
+                      style={[
+                        styles.modeSwitchButton, 
+                        { 
+                          overflow: 'hidden',
+                          borderRadius: themeStyles.borderRadius,
+                          elevation: themeStyles.buttonElevation,
+                          shadowColor: themeStyles.primary,
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: 0.4,
+                          shadowRadius: 8,
+                          backgroundColor: themeStyles.primary,
+                        }
+                      ]}
+                      onPress={toggleAppMode}
+                    >
+                      <Ionicons 
+                        name="swap-horizontal" 
+                        size={normalize(18)} 
+                        color={themeStyles.buttonText} 
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </Animated.View>
               </View>
             </Card>
-          </Animated.View>
+          </View>
 
           {/* Quote of the day */}
           {quote && (
-            <Card style={styles.quoteCard}>
-              <Ionicons name="quote" size={normalize(20)} color={DefaultTheme.primary} style={styles.quoteIcon} />
-              <Text style={[styles.quoteText, { color: themeStyles.text, fontSize: normalize(15) }]}>
-                "{quote.text}"
-              </Text>
-              <Text style={[styles.quoteAuthor, { color: themeStyles.text + '80', fontSize: normalize(13) }]}>
-                — {quote.author}
-              </Text>
-            </Card>
+            <TouchableOpacity
+              onPress={() => {
+                const quotes = [
+                  { text: "Habits are the compound interest of self-improvement.", author: "James Clear" },
+                  { text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },
+                  { text: "The quality of your life is determined by the quality of your habits.", author: "Brian Tracy" },
+                  { text: "Motivation is what gets you started. Habit is what keeps you going.", author: "Jim Ryun" },
+                  { text: "Successful people are simply those with successful habits.", author: "Brian Tracy" }
+                ];
+                
+                // Get a new random quote that's different from the current one
+                let newQuote;
+                do {
+                  newQuote = quotes[Math.floor(Math.random() * quotes.length)];
+                } while (quote && quote.text === newQuote.text);
+                
+                setQuote(newQuote);
+                Alert.alert("New Quote!", "Refreshed with wisdom for your day.");
+              }}
+            >
+              <Card style={styles.quoteCard}>
+                <Ionicons name="quote" size={normalize(20)} color={DefaultTheme.primary} style={styles.quoteIcon} />
+                <Text style={[styles.quoteText, { color: themeStyles.text, fontSize: normalize(15) }]}>
+                  "{quote?.text || "Habits are the compound interest of self-improvement."}"
+                </Text>
+                <Text style={[styles.quoteAuthor, { color: themeStyles.text + '80', fontSize: normalize(13) }]}>
+                  — {quote?.author || "James Clear"}
+                </Text>
+              </Card>
+            </TouchableOpacity>
           )}
 
           {/* Stats card */}
-          <Card style={styles.statsCard}>
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: themeStyles.primary, fontSize: normalize(32) }]}>{currentStreak}</Text>
-                <Text style={[styles.statLabel, { color: themeStyles.text, fontSize: normalize(14) }]}>Day Streak</Text>
+          <View style={{marginBottom: normalize(16)}}>
+            <Card style={[styles.statsCard, {
+              overflow: 'hidden',
+              borderRadius: themeStyles.borderRadius,
+            }]}>
+              <View style={{
+                backgroundColor: themeStyles.withOpacity('card', 'FF'),
+                borderRadius: themeStyles.borderRadius,
+                padding: normalize(16),
+                borderWidth: 1,
+                borderColor: themeStyles.withOpacity('primary', '20'),
+              }}>
+                <View style={styles.statsRow}>
+                  <View style={styles.statItem}>
+                    <Text 
+                      style={[styles.statValue, { 
+                        color: themeStyles.primary, 
+                        fontSize: normalize(32),
+                        fontWeight: 'bold',
+                      }]}
+                    >
+                      {currentStreak}
+                    </Text>
+                    <Text style={[styles.statLabel, { color: themeStyles.text, fontSize: normalize(14) }]}>Day Streak</Text>
+                  </View>
+                  <View style={[styles.divider, { backgroundColor: themeStyles.divider }]} />
+                  <View style={styles.statItem}>
+                    <Text 
+                      style={[styles.statValue, { 
+                        color: themeStyles.primary, 
+                        fontSize: normalize(32),
+                        fontWeight: 'bold',
+                      }]}
+                    >
+                      {completedToday}
+                    </Text>
+                    <Text style={[styles.statLabel, { color: themeStyles.text, fontSize: normalize(14) }]}>Completed Today</Text>
+                  </View>
+                  <View style={[styles.divider, { backgroundColor: themeStyles.divider }]} />
+                  <View style={styles.statItem}>
+                    <Text 
+                      style={[styles.statValue, { 
+                        color: themeStyles.primary, 
+                        fontSize: normalize(32),
+                        fontWeight: 'bold',
+                      }]}
+                    >
+                      {habits.length}
+                    </Text>
+                    <Text style={[styles.statLabel, { color: themeStyles.text, fontSize: normalize(14) }]}>Total Habits</Text>
+                  </View>
+                </View>
               </View>
-              <View style={styles.divider} />
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: themeStyles.primary, fontSize: normalize(32) }]}>{completedToday}</Text>
-                <Text style={[styles.statLabel, { color: themeStyles.text, fontSize: normalize(14) }]}>Completed Today</Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: themeStyles.primary, fontSize: normalize(32) }]}>{habits.length}</Text>
-                <Text style={[styles.statLabel, { color: themeStyles.text, fontSize: normalize(14) }]}>Total Habits</Text>
-              </View>
-            </View>
-          </Card>
+            </Card>
+          </View>
 
           {/* Water Tracker - Modified to be smaller */}
           <Card style={styles.waterTrackerCard}>
             <View style={styles.waterTrackerHeader}>
               <View style={styles.waterTitleContainer}>
-                <Ionicons name="water-outline" size={normalize(18)} color={DefaultTheme.primary} />
-                <Text style={[styles.waterTitle, { color: themeStyles.text, fontSize: normalize(15) }]}>
+                <Ionicons name="water-outline" size={normalize(22)} color={DefaultTheme.primary} />
+                <Text style={[styles.sectionTitle, { color: themeStyles.text }]}>
                   Water Tracker
                 </Text>
               </View>
-              <Text style={[styles.waterCount, { color: themeStyles.primary }]}>
+              <Text style={[styles.waterCount, { color: themeStyles.primary, fontSize: normalize(15) }]}>
                 {waterIntake}/8 glasses
               </Text>
             </View>
             
+            <Text style={[styles.itemDescription, { color: themeStyles.text + '99', marginBottom: normalize(12) }]}>
+              Stay hydrated! Tap the glasses below to track your water intake for the day.
+            </Text>
+            
             <View style={styles.waterGlassesContainer}>
-              {[...Array(8)].map((_, i) => (
-                <TouchableOpacity 
-                  key={i} 
-                  style={[
-                    styles.waterGlass, 
-                    { borderColor: themeStyles.primary, backgroundColor: i < waterIntake ? themeStyles.primary + '50' : 'transparent' }
-                  ]}
-                  onPress={increaseWaterIntake}
-                >
-                  <Ionicons 
-                    name="water" 
-                    size={normalize(16)} 
-                    color={i < waterIntake ? themeStyles.primary : themeStyles.primary + '40'} 
-                  />
-                </TouchableOpacity>
-              ))}
+              {[...Array(8)].map((_, i) => {
+                // Calculate dynamic size based on screen width
+                const screenWidth = windowDimensions.width - normalize(64); // Account for padding
+                const size = Math.min(normalize(45), screenWidth / 4.5); // Limit to 4-5 per row
+                
+                return (
+                  <TouchableOpacity 
+                    key={i} 
+                    style={[
+                      styles.waterGlass, 
+                      { 
+                        borderColor: themeStyles.primary,
+                        backgroundColor: i < waterIntake ? themeStyles.primary + '20' : 'transparent',
+                        transform: [{ scale: i < waterIntake ? 1 : 0.9 }],
+                        width: size,
+                        height: size,
+                        borderRadius: size / 2
+                      }
+                    ]}
+                    onPress={increaseWaterIntake}
+                  >
+                    <Ionicons 
+                      name="water" 
+                      size={size * 0.5} // Make icon size proportional to container
+                      color={i < waterIntake ? themeStyles.primary : themeStyles.primary + '40'} 
+                    />
+                    {i < waterIntake && (
+                      <View style={styles.checkmarkBadge}>
+                        <Ionicons name="checkmark-circle" size={normalize(14)} color={themeStyles.primary} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </Card>
 
           {/* Profile and Points Section - New */}
-          <Card style={styles.profileCard}>
-            <View style={styles.profileHeader}>
-              <View style={styles.profileInfo}>
-                <View style={styles.profileAvatar}>
-                  <Text style={styles.profileInitials}>RM</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Profile')}
+            style={{marginBottom: normalize(16)}}
+          >
+            <Card style={styles.profileCard}>
+              <View style={styles.profileHeader}>
+                <View style={styles.profileInfo}>
+                  <View style={styles.profileAvatar}>
+                    <Text style={styles.profileInitials}>RM</Text>
+                  </View>
+                  <View style={styles.profileDetails}>
+                    <Text style={[styles.profileName, { color: themeStyles.text, fontSize: normalize(16) }]}>
+                      Rick Morty
+                    </Text>
+                    <Text style={[styles.profileBio, { color: themeStyles.text + '99', fontSize: normalize(13) }]}>
+                      Habit enthusiast
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.profileDetails}>
-                  <Text style={[styles.profileName, { color: themeStyles.text, fontSize: normalize(16) }]}>
-                    Rick Morty
-                  </Text>
-                  <Text style={[styles.profileBio, { color: themeStyles.text + '99', fontSize: normalize(13) }]}>
-                    Habit enthusiast
+                <View style={styles.pointsContainer}>
+                  <Ionicons name="star" size={normalize(18)} color="#FFD700" />
+                  <Text style={[styles.pointsText, { color: themeStyles.text, fontSize: normalize(18) }]}>
+                    {userPoints} pts
                   </Text>
                 </View>
               </View>
-              <View style={styles.pointsContainer}>
-                <Ionicons name="star" size={normalize(18)} color="#FFD700" />
-                <Text style={[styles.pointsText, { color: themeStyles.text, fontSize: normalize(18) }]}>
-                  {userPoints} pts
+              
+              <View style={styles.levelProgress}>
+                <View style={[styles.progressBar, { backgroundColor: themeStyles.primary + '30' }]}>
+                  <View 
+                    style={[
+                      styles.progressFill, 
+                      { width: `${(userPoints % 100) / 100 * 100}%`, backgroundColor: themeStyles.primary }
+                    ]}
+                  />
+                </View>
+                <Text style={[styles.levelText, { color: themeStyles.text + '80', fontSize: normalize(12) }]}>
+                  Level {Math.floor(userPoints / 100) + 1} • {100 - (userPoints % 100)} points to next level
                 </Text>
               </View>
-            </View>
-            
-            <View style={styles.levelProgress}>
-              <View style={[styles.progressBar, { backgroundColor: themeStyles.primary + '30' }]}>
-                <View 
-                  style={[
-                    styles.progressFill, 
-                    { width: `${(userPoints % 100) / 100 * 100}%`, backgroundColor: themeStyles.primary }
-                  ]}
-                />
-              </View>
-              <Text style={[styles.levelText, { color: themeStyles.text + '80', fontSize: normalize(12) }]}>
-                Level {Math.floor(userPoints / 100) + 1} • {100 - (userPoints % 100)} points to next level
-              </Text>
-            </View>
-          </Card>
+            </Card>
+          </TouchableOpacity>
 
           {/* Achievements Section - New */}
           <View style={styles.section}>
@@ -725,7 +1501,21 @@ const HomeScreen = () => {
               style={styles.achievementsScrollView}
             >
               {achievements.map((achievement) => (
-                <View key={achievement.id} style={styles.achievementCard}>
+                <TouchableOpacity 
+                  key={achievement.id} 
+                  onPress={() => {
+                    if (achievement.earned) {
+                      setUserPoints(prev => prev + 1);
+                      setLastRewardPoints(1);
+                      setRewardNotification(true);
+                      setTimeout(() => setRewardNotification(false), 3000);
+                      Alert.alert('Achievement Details', achievement.description);
+                    } else {
+                      Alert.alert('Locked Achievement', 'Complete the requirements to unlock this achievement!');
+                    }
+                  }}
+                  style={styles.achievementCard}
+                >
                   <View style={[
                     styles.achievementIconContainer, 
                     { 
@@ -762,7 +1552,7 @@ const HomeScreen = () => {
                       <Ionicons name="lock-closed" size={normalize(12)} color={DefaultTheme.textSecondary + '90'} />
                     </View>
                   )}
-                </View>
+                </TouchableOpacity>
               ))}
             </ScrollView>
           </View>
@@ -800,56 +1590,100 @@ const HomeScreen = () => {
           {/* Today's Habits */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: themeStyles.text }]}>Today's Habits</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Habits')}>
-                <Text style={[styles.seeAllBtn, { color: themeStyles.primary }]}>See All</Text>
+              <Text style={[styles.sectionTitle, { 
+                color: themeStyles.text,
+                fontSize: normalize(18),
+                fontWeight: '700',
+              }]}>Today's Habits</Text>
+              <TouchableOpacity 
+                style={{
+                  backgroundColor: themeStyles.primary,
+                  paddingHorizontal: normalize(12),
+                  paddingVertical: normalize(6),
+                  borderRadius: normalize(16),
+                }}
+                onPress={() => navigation.navigate('Habits')}
+              >
+                <Text style={[styles.seeAllBtn, { color: '#FFF' }]}>See All</Text>
               </TouchableOpacity>
             </View>
             
             {todayHabits.length > 0 ? (
               <View style={styles.habitsContainer}>
-                {todayHabits.map((habit) => {
+                {todayHabits.map((habit, index) => {
                   const today = new Date().toISOString().split('T')[0];
                   const isCompleted = habit.completedDates.includes(today);
-                  const streakCount = calculateStreak(habit.completedDates);
+                  const streakCount = habit.streak || calculateStreak(habit.completedDates);
                   
                   return (
-                    <TouchableOpacity
+                    <View
                       key={habit.id}
-                      style={[styles.habitCard, { backgroundColor: themeStyles.card }]}
-                      onPress={() => toggleHabitCompletion(habit.id)}
+                      style={{
+                        marginBottom: normalize(12),
+                        opacity: 1,
+                        transform: [{ translateY: 0 }],
+                      }}
                     >
-                      <View style={styles.habitIconContainer}>
-                        <View style={[
-                          styles.habitIcon,
-                          { backgroundColor: habit.color || themeStyles.primary }
-                        ]}>
-                          <Ionicons name={habit.icon || "water-outline"} size={normalize(22)} color="#fff" />
+                      <TouchableOpacity
+                        style={[styles.habitCard, { 
+                          backgroundColor: themeStyles.card,
+                          borderWidth: 1,
+                          borderColor: themeStyles.withOpacity('primary', '20'),
+                          shadowColor: themeStyles.primary,
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: 0.2,
+                          shadowRadius: 8,
+                        }]}
+                        onPress={() => toggleHabitCompletion(habit.id)}
+                      >
+                        <View style={styles.habitIconContainer}>
+                          <View
+                            style={[
+                              styles.habitIcon,
+                              { backgroundColor: habit.color || themeStyles.primary }
+                            ]}
+                          >
+                            <Ionicons name={habit.icon || "water-outline"} size={normalize(22)} color="#fff" />
+                          </View>
                         </View>
-                      </View>
-                      
-                      <View style={styles.habitInfo}>
-                        <Text style={[styles.habitName, { color: themeStyles.text }]}>{habit.title}</Text>
-                        <View style={styles.streakContainer}>
-                          <Ionicons name="flame-outline" size={normalize(14)} color={DefaultTheme.accent} />
-                          <Text style={[styles.streakText, { color: themeStyles.text + '80' }]}>{streakCount} day{streakCount !== 1 ? 's' : ''}</Text>
+                        
+                        <View style={styles.habitInfo}>
+                          <Text style={[styles.habitName, { 
+                            color: themeStyles.text,
+                            fontWeight: '700',
+                          }]}>{habit.title}</Text>
+                          <View style={styles.streakContainer}>
+                            <Ionicons name="flame-outline" size={normalize(14)} color={themeStyles.accent} />
+                            <Text style={[styles.streakText, { color: themeStyles.text + '80' }]}>{streakCount} day{streakCount !== 1 ? 's' : ''}</Text>
+                          </View>
                         </View>
-                      </View>
-                      
-                      <View style={styles.habitActions}>
-                        <TouchableOpacity
-                          style={[
-                            styles.habitCheckbox,
-                            { borderColor: themeStyles.primary },
-                            isCompleted && { backgroundColor: themeStyles.primary }
-                          ]}
-                        >
-                          {isCompleted && (
-                            <Ionicons name="checkmark" size={normalize(16)} color="#fff" />
-                          )}
-                        </TouchableOpacity>
-                      </View>
-                    </TouchableOpacity>
+                        
+                        <View style={styles.habitActions}>
+                          <Animated.View>
+                            <TouchableOpacity
+                              style={[
+                                styles.habitCheckbox,
+                                { 
+                                  borderColor: themeStyles.primary,
+                                  transform: [{ scale: isCompleted ? 1.1 : 1 }],
+                                },
+                                isCompleted && { 
+                                  backgroundColor: themeStyles.primary,
+                                  shadowColor: themeStyles.primary,
+                                  shadowOffset: { width: 0, height: 2 },
+                                  shadowOpacity: 0.4,
+                                  shadowRadius: 4,
+                                }
+                              ]}
+                            >
+                              {isCompleted && (
+                                <Ionicons name="checkmark" size={normalize(16)} color="#fff" />
+                              )}
+                            </TouchableOpacity>
+                          </Animated.View>
+                        </View>
+                      </TouchableOpacity>
+                    </View>
                   );
                 })}
               </View>
@@ -857,7 +1691,11 @@ const HomeScreen = () => {
               <View style={styles.emptyHabitsContainer}>
                 <Text style={[styles.emptyText, { color: themeStyles.text + '80' }]}>No habits scheduled for today</Text>
                 <TouchableOpacity 
-                  style={[styles.addHabitBtn, { backgroundColor: themeStyles.primary }]}
+                  style={[styles.addHabitBtn, { 
+                    overflow: 'hidden', 
+                    borderRadius: normalize(8),
+                    backgroundColor: themeStyles.primary,
+                  }]}
                   onPress={() => navigation.navigate('CreateHabit')}
                 >
                   <Text style={styles.addHabitBtnText}>Add a new habit</Text>
@@ -868,7 +1706,19 @@ const HomeScreen = () => {
 
           {/* Daily Challenge Card */}
           <Card style={styles.challengeCard}>
-            <View style={styles.challengeHeader}>
+            <TouchableOpacity 
+              style={styles.challengeHeader}
+              onPress={() => {
+                Alert.alert(
+                  currentMode === APP_MODES.PERSONAL_GROWTH ? 'Daily Boost' : 'Daily Challenge',
+                  'Complete this activity to boost your personal growth or productivity!',
+                  [
+                    {text: 'Learn More', onPress: () => handleAcceptChallenge()},
+                    {text: 'Cancel', style: 'cancel'}
+                  ]
+                );
+              }}
+            >
               <Ionicons 
                 name={currentMode === APP_MODES.PERSONAL_GROWTH ? "star" : "trophy"} 
                 size={normalize(22)} 
@@ -877,7 +1727,7 @@ const HomeScreen = () => {
               <Text style={[styles.challengeTitle, { color: DefaultTheme.text, fontSize: normalize(16) }]}>
                 Daily {currentMode === APP_MODES.PERSONAL_GROWTH ? 'Boost' : 'Challenge'}
               </Text>
-            </View>
+            </TouchableOpacity>
             <Text style={[styles.challengeText, { color: DefaultTheme.text + '99', fontSize: normalize(14) }]}>
               {currentMode === APP_MODES.PERSONAL_GROWTH 
                 ? "Take 5 minutes to express gratitude for one thing in your life."
@@ -902,7 +1752,24 @@ const HomeScreen = () => {
                     Quick Tips
                   </Text>
                 </View>
-                <TouchableOpacity onPress={() => setShowTips(false)}>
+                <TouchableOpacity 
+                  onPress={() => {
+                    // Animate the hiding
+                    Animated.timing(fadeAnim, {
+                      toValue: 0,
+                      duration: 300,
+                      useNativeDriver: true,
+                    }).start(() => {
+                      setShowTips(false);
+                      // Fade back in
+                      Animated.timing(fadeAnim, {
+                        toValue: 1,
+                        duration: 500,
+                        useNativeDriver: true,
+                      }).start();
+                    });
+                  }}
+                >
                   <Ionicons name="close-outline" size={normalize(22)} color={DefaultTheme.text + '60'} />
                 </TouchableOpacity>
               </View>
@@ -915,6 +1782,26 @@ const HomeScreen = () => {
           )}
         </Animated.ScrollView>
       )}
+
+      {/* Add a floating action button for adding habits */}
+      <TouchableOpacity
+        style={[styles.floatingIcon, {
+          backgroundColor: themeStyles.primary,
+          position: 'absolute',
+          bottom: 20,
+          right: 20,
+          width: 56,
+          height: 56,
+          borderRadius: 28,
+          alignItems: 'center',
+          justifyContent: 'center',
+          elevation: 6,
+          zIndex: 1000,
+        }]}
+        onPress={() => navigation.navigate('CreateHabit')}
+      >
+        <Ionicons name="add" size={normalize(28)} color="#FFF" />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -928,7 +1815,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
   },
   greetingContainer: {
-    marginTop: normalize(16),
     marginBottom: normalize(20),
   },
   greeting: {
@@ -968,18 +1854,20 @@ const styles = StyleSheet.create({
   },
   modeCard: {
     marginBottom: normalize(16),
+    overflow: 'hidden',
   },
   modeContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: normalize(2),
   },
   modeIconContainer: {
     marginRight: normalize(14),
   },
   modeIconCircle: {
-    width: normalize(46),
-    height: normalize(46),
-    borderRadius: normalize(23),
+    width: normalize(50),
+    height: normalize(50),
+    borderRadius: normalize(25),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -993,9 +1881,9 @@ const styles = StyleSheet.create({
   modeDescription: {
   },
   modeSwitchButton: {
-    width: normalize(36),
-    height: normalize(36),
-    borderRadius: normalize(18),
+    width: normalize(40),
+    height: normalize(40),
+    borderRadius: normalize(20),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1047,7 +1935,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: normalize(12),
+    marginBottom: normalize(14),
   },
   waterTitleContainer: {
     flexDirection: 'row',
@@ -1064,17 +1952,19 @@ const styles = StyleSheet.create({
   waterGlassesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
+    marginTop: normalize(8),
   },
   waterGlass: {
-    width: '11%', // Changed from 23% to make them smaller
-    aspectRatio: 0.9,
+    width: normalize(45),
+    height: normalize(45),
+    aspectRatio: 1,
     borderWidth: 1,
-    borderRadius: normalize(6), // Reduced from 8
+    borderRadius: normalize(22.5),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: normalize(6),
-    marginHorizontal: '1%',
+    marginBottom: normalize(8),
+    marginHorizontal: normalize(4),
   },
   section: {
     marginBottom: normalize(16),
@@ -1101,14 +1991,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: normalize(12),
-    padding: normalize(12),
+    borderRadius: normalize(16), // Increased for more modern look
+    padding: normalize(14),
     marginBottom: normalize(12),
-    elevation: 2,
+    elevation: 3, // Slightly increased
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
-    shadowRadius: 2,
+    shadowRadius: 4,
   },
   habitIconContainer: {
     marginRight: normalize(12),
@@ -1363,6 +2253,186 @@ const styles = StyleSheet.create({
   criteriaText: {
     marginLeft: normalize(10),
   },
+  itemDescription: {
+    fontSize: normalize(13),
+    lineHeight: normalize(18),
+  },
+  checkmarkBadge: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 1,
+  },
+  calendarCard: {
+    marginBottom: normalize(16),
+    padding: normalize(14),
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: normalize(10),
+  },
+  calendarTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  calendarTitle: {
+    fontWeight: '600',
+    marginLeft: normalize(6),
+  },
+  calendarBadge: {
+    paddingHorizontal: normalize(8),
+    paddingVertical: normalize(4),
+    borderRadius: normalize(12),
+  },
+  calendarBadgeText: {
+    fontWeight: '600',
+    fontSize: normalize(11),
+  },
+  calendarWrapper: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  calendarLeft: {
+    flex: 1,
+    paddingRight: normalize(10),
+  },
+  calendarRight: {
+    width: '60%',
+  },
+  calendarDescription: {
+    fontSize: normalize(13),
+    lineHeight: normalize(18),
+    fontWeight: '500',
+    marginBottom: normalize(8),
+  },
+  streakInfo: {
+    fontSize: normalize(12),
+    marginBottom: normalize(2),
+    lineHeight: normalize(16),
+  },
+  calendarDayNames: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: normalize(4),
+  },
+  calendarDayName: {
+    fontSize: normalize(10),
+    width: '14.28%',
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+  },
+  calendarDay: {
+    width: '14.28%',
+    aspectRatio: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: normalize(1),
+  },
+  calendarDayEmpty: {
+    backgroundColor: 'transparent',
+  },
+  calendarDayCircle: {
+    width: normalize(20),
+    height: normalize(20),
+    borderRadius: normalize(10),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  calendarDayNumber: {
+    fontSize: normalize(10),
+    fontWeight: '500',
+  },
+  calendarCompletedDot: {
+    width: normalize(4),
+    height: normalize(4),
+    borderRadius: normalize(2),
+    position: 'absolute',
+    bottom: normalize(1),
+  },
+  calendarButton: {
+    padding: normalize(8),
+    borderRadius: normalize(8),
+    alignItems: 'center',
+  },
+  calendarButtonText: {
+    fontWeight: '600',
+    fontSize: normalize(12),
+  },
+  floatingIcon: {
+    position: 'absolute',
+    right: normalize(20),
+    bottom: normalize(20),
+    width: normalize(56),
+    height: normalize(56),
+    borderRadius: normalize(28),
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+    zIndex: 999,
+  },
+  gradientCard: {
+    borderRadius: normalize(16),
+    marginBottom: normalize(16),
+    overflow: 'hidden',
+  },
+  cardContent: {
+    padding: normalize(16),
+  },
+  statsGlow: {
+    textShadowColor: 'rgba(139, 92, 246, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  achievementItem: {
+    position: 'relative',
+    overflow: 'visible',
+  },
+  badgeOverlay: {
+    position: 'absolute',
+    top: -normalize(6),
+    right: -normalize(6),
+    backgroundColor: '#FF3B30',
+    width: normalize(18),
+    height: normalize(18),
+    borderRadius: normalize(9),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#fff',
+  },
+  pillButton: {
+    paddingHorizontal: normalize(16),
+    paddingVertical: normalize(8),
+    borderRadius: normalize(20),
+    marginTop: normalize(12),
+    alignSelf: 'center',
+  },
+  fluidShape: {
+    position: 'absolute',
+    top: -normalize(40),
+    right: -normalize(30),
+    width: normalize(100),
+    height: normalize(100),
+    borderRadius: normalize(50),
+    opacity: 0.1,
+    transform: [{ scale: 1.5 }],
+  }
 });
 
 export default HomeScreen; 

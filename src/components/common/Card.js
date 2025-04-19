@@ -20,7 +20,7 @@ const Card = ({
   padding = 'medium', // none, small, medium, large
   onPress,
 }) => {
-  const { theme } = useContext(AppContext);
+  const { theme, currentMode } = useContext(AppContext);
   
   const getPadding = () => {
     switch (padding) {
@@ -46,8 +46,11 @@ const Card = ({
         {
           backgroundColor: theme.card,
           padding: getPadding(),
-          shadowColor: theme.text + '30',
-          elevation: elevation,
+          shadowColor: theme.cardShadow || theme.text + '30',
+          elevation: theme.cardElevation || elevation,
+          borderRadius: theme.borderRadius || normalize(8),
+          borderColor: theme.border,
+          borderWidth: 0.5,
         },
         style,
       ]}
@@ -61,7 +64,6 @@ const Card = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: normalize(8),
     padding: normalize(12),
     marginBottom: normalize(12),
     shadowOffset: {
@@ -70,7 +72,6 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.08,
     shadowRadius: normalize(2),
-    elevation: 2,
   },
 });
 
