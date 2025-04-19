@@ -12,7 +12,7 @@ import { setNavigationRef } from '../services/AppContext';
 
 const RootNavigator = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Always set to true to show HomeScreen directly
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Always start with auth screen
   const navigationRef = useRef(null);
 
   // Set up the navigation reference
@@ -22,25 +22,52 @@ const RootNavigator = () => {
     }
   }, [navigationRef.current]);
 
-  // Set token on app start to ensure user is "logged in"
+  // Initialize app and check authentication
   useEffect(() => {
-    const setInitialToken = async () => {
+    const initializeApp = async () => {
+      console.log('Initializing app and checking auth state');
+      setIsLoading(true);
+      
       try {
-        // Always set a token to ensure we're authenticated
-        await AsyncStorage.setItem('userToken', 'demo-token');
-        console.log('Token set - ensuring HomeScreen shows directly');
+        // Check for existing token - this determines if we show login or home
+        const userToken = await AsyncStorage.getItem('userToken');
+        console.log('Authentication token found:', userToken ? 'Yes' : 'No');
         
-        setIsAuthenticated(true);
+        // For testing, we'll reset auth state on app start if this is false
+        const shouldStartWithAuth = true;  
+        
+        if (shouldStartWithAuth) {
+          // Clear any existing tokens for testing
+          await AsyncStorage.removeItem('userToken');
+          setIsAuthenticated(false);
+          console.log('Auth cleared for testing - showing login screen');
+        } else {
+          // Otherwise, authenticate if a token exists
+          setIsAuthenticated(!!userToken);
+          console.log('Auth state set based on token:', !!userToken);
+        }
+        
         setIsLoading(false);
       } catch (error) {
-        console.error('Error setting token:', error);
-        // Even if there's an error, still show HomeScreen
-        setIsAuthenticated(true);
+        console.error('Error initializing app:', error);
+        setIsAuthenticated(false);
         setIsLoading(false);
       }
     };
 
-    setInitialToken();
+    initializeApp();
+    
+    // Listen for auth state changes (mock implementation)
+    const interval = setInterval(async () => {
+      try {
+        const token = await AsyncStorage.getItem('userToken');
+        setIsAuthenticated(!!token);
+      } catch (e) {
+        console.error('Error checking token:', e);
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   if (isLoading) {
@@ -52,9 +79,11 @@ const RootNavigator = () => {
     );
   }
 
+  console.log('Rendering root navigator with auth state:', isAuthenticated);
+  
   return (
     <NavigationContainer ref={navigationRef}>
-      <AppNavigator />
+      {isAuthenticated ? <AppNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
 };

@@ -17,6 +17,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { routeToScreen } from 'expo-router/build/useScreens';
 
 // For responsive design
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -53,19 +54,15 @@ const LoginScreen = () => {
     clearToken();
   }, []);
 
-  // Handle login
+  // Handle login with enhanced navigation
   const handleLogin = async () => {
     // Clear previous messages
     setErrorMessage('');
     setSuccessMessage('');
     
-    // Validate input
-    if (!email.trim()) {
-      setErrorMessage('Please enter your email');
-      return;
-    }
-    if (!password.trim()) {
-      setErrorMessage('Please enter your password');
+    // Very basic validation - just ensure some input is provided
+    if (!email.trim() && !password.trim()) {
+      setErrorMessage('Please enter at least one field to login');
       return;
     }
     
@@ -73,26 +70,33 @@ const LoginScreen = () => {
     setLoading(true);
     
     try {
-      // In a real app, this would make an API call to authenticate
-      // For now, we'll simulate a successful login
-      console.log('Logging in with:', email);
+      // Log the attempt
+      console.log('Attempting login...');
       
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Store the token to indicate logged in state
+      // Store the token first to ensure authentication is set
       await AsyncStorage.setItem('userToken', 'demo-token');
       
-      // Show success message
+      // Show success briefly
       setSuccessMessage('Login successful!');
       
-      // Navigate to Home screen
-      setTimeout(() => {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Home' }],
-        });
-      }, 500);
+      // Use a shorter timeout for better UX
+      setTimeout(async () => {
+        try {
+          console.log('Navigation reset to Home');
+          
+          // For debugging - log that we definitely have a token
+          const token = await AsyncStorage.getItem('userToken');
+          console.log('Token before navigation:', token);
+          
+          // Reset navigation stack to show HomeScreen
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          });
+        } catch (error) {
+          console.error('Navigation error:', error);
+        }
+      }, 300);
       
     } catch (error) {
       console.error('Login error:', error);
@@ -180,6 +184,31 @@ const LoginScreen = () => {
         }
       ]
     );
+  };
+
+  // Auto login function
+  const handleAutoLogin = async () => {
+    setLoading(true);
+    
+    try {
+      // Set token first
+      await AsyncStorage.setItem('userToken', 'demo-token');
+      console.log('Token set for auto-login');
+      
+      // Then navigate
+      setTimeout(() => {
+        console.log('Auto-login navigation to Home');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+      }, 300);
+      
+    } catch (error) {
+      console.error('Auto login error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -275,11 +304,14 @@ const LoginScreen = () => {
             </View>
             
             {/* Login Button */}
-            <TouchableOpacity 
-              style={[styles.loginButton, loading && styles.loginButtonDisabled]} 
+            <TouchableOpacity
+              style={[
+                styles.loginButton,
+                loading && styles.loginButtonDisabled,
+                {marginTop: normalize(20)}
+              ]}
               onPress={handleLogin}
               disabled={loading}
-              activeOpacity={0.8}
             >
               {loading ? (
                 <ActivityIndicator color="#fff" size="small" />
@@ -287,6 +319,20 @@ const LoginScreen = () => {
                 <Text style={styles.loginButtonText}>Login</Text>
               )}
             </TouchableOpacity>
+            
+            {/* Debug Auto Login - Visible only during development */}
+            {__DEV__ && (
+              <TouchableOpacity
+                style={[
+                  styles.autoLoginButton,
+                  loading && styles.loginButtonDisabled
+                ]}
+                onPress={handleAutoLogin}
+                disabled={loading}
+              >
+                <Text style={styles.autoLoginButtonText}>Quick Login (Dev Only)</Text>
+              </TouchableOpacity>
+            )}
             
             {/* Sign Up Link */}
             <View style={styles.signupContainer}>
@@ -436,6 +482,19 @@ const styles = StyleSheet.create({
     marginLeft: normalize(8),
     flex: 1,
     fontSize: normalize(13),
+  },
+  autoLoginButton: {
+    backgroundColor: '#8b5cf6',
+    height: normalize(44),
+    borderRadius: normalize(10),
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: normalize(20),
+  },
+  autoLoginButtonText: {
+    color: '#fff',
+    fontSize: normalize(15),
+    fontWeight: '600',
   },
 });
 

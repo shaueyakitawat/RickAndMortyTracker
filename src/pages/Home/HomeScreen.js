@@ -12,7 +12,9 @@ import {
   RefreshControl,
   useWindowDimensions,
   Platform,
-  PixelRatio
+  PixelRatio,
+  Modal,
+  TextInput
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -928,6 +930,66 @@ const HomeScreen = () => {
     ensureAuthenticated();
   }, []);
 
+  // Add new state for create habit modal
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [newHabit, setNewHabit] = useState({
+    title: '',
+    description: '',
+    frequency: 'daily',
+    icon: 'leaf',
+    color: '#8b5cf6',
+  });
+  
+  // Define icon and frequency options
+  const iconOptions = [
+    { name: 'leaf', color: '#8b5cf6' },
+    { name: 'book', color: '#3b82f6' },
+    { name: 'fitness', color: '#ef4444' },
+    { name: 'water', color: '#0ea5e9' },
+    { name: 'bed', color: '#8b5cf6' },
+    { name: 'restaurant', color: '#f59e0b' },
+  ];
+
+  const frequencyOptions = [
+    { label: 'Daily', value: 'daily' },
+    { label: 'Weekly', value: 'weekly' },
+    { label: 'Monthly', value: 'monthly' },
+  ];
+  
+  // Handle creating a new habit
+  const handleCreateHabit = () => {
+    if (!newHabit.title.trim()) return;
+
+    const habit = {
+      id: Date.now().toString(),
+      title: newHabit.title,
+      description: newHabit.description,
+      frequency: newHabit.frequency,
+      completedDates: [],
+      icon: newHabit.icon,
+      color: newHabit.color,
+      mode: 'both', // Available in both modes
+    };
+
+    setHabits([...habits, habit]);
+    setCreateModalVisible(false);
+    
+    // Reset the form
+    setNewHabit({
+      title: '',
+      description: '',
+      frequency: 'daily',
+      icon: 'leaf',
+      color: '#8b5cf6',
+    });
+    
+    // Show success message
+    Alert.alert('Success', 'New habit created successfully!');
+    
+    // Reload data to update today's habits
+    loadData();
+  };
+
   return (
     <View style={[styles.container, { 
       backgroundColor: themeStyles.background,
@@ -1302,7 +1364,11 @@ const HomeScreen = () => {
                           backgroundColor: themeStyles.primary,
                         }
                       ]}
-                      onPress={toggleAppMode}
+                      onPress={() => {
+                        console.log('Mode toggle pressed');
+                        toggleAppMode();
+                      }}
+                      activeOpacity={0.7}
                     >
                       <Ionicons 
                         name="swap-horizontal" 
@@ -1725,7 +1791,11 @@ const HomeScreen = () => {
                     backgroundColor: themeStyles.primary,
                     paddingVertical: normalize(12),
                   }]}
-                  onPress={() => navigation.navigate('CreateHabit')}
+                  onPress={() => {
+                    console.log('Opening create habit modal');
+                    setCreateModalVisible(true);
+                  }}
+                  activeOpacity={0.7}
                 >
                   <Text style={[styles.addHabitBtnText, { fontSize: normalize(16) }]}>Add a new habit</Text>
                 </TouchableOpacity>
@@ -1812,7 +1882,7 @@ const HomeScreen = () => {
         </Animated.ScrollView>
       )}
 
-      {/* Add a floating action button for adding habits */}
+      {/* Add a floating action button for adding habits - updated */}
       <TouchableOpacity
         style={[styles.floatingIcon, {
           backgroundColor: themeStyles.primary,
@@ -1827,10 +1897,137 @@ const HomeScreen = () => {
           elevation: 6,
           zIndex: 1000,
         }]}
-        onPress={() => navigation.navigate('CreateHabit')}
+        onPress={() => {
+          console.log('Opening create habit modal from floating button');
+          setCreateModalVisible(true);
+        }}
+        activeOpacity={0.7}
       >
         <Ionicons name="add" size={normalize(28)} color="#FFF" />
       </TouchableOpacity>
+      
+      {/* Create Habit Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={createModalVisible}
+        onRequestClose={() => setCreateModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: themeStyles.card }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: themeStyles.text }]}>Create New Habit</Text>
+              <TouchableOpacity onPress={() => setCreateModalVisible(false)}>
+                <Ionicons name="close" size={normalize(24)} color={themeStyles.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalScroll}>
+              <Text style={[styles.inputLabel, { color: themeStyles.text }]}>Title</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  { 
+                    color: themeStyles.text,
+                    borderColor: themeStyles.withOpacity('text', '20'),
+                    backgroundColor: themeStyles.withOpacity('background', 'DD') 
+                  }
+                ]}
+                placeholder="Habit name"
+                placeholderTextColor={themeStyles.withOpacity('text', '60')}
+                value={newHabit.title}
+                onChangeText={(text) => setNewHabit({ ...newHabit, title: text })}
+              />
+
+              <Text style={[styles.inputLabel, { color: themeStyles.text }]}>Description (optional)</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  styles.textArea,
+                  { 
+                    color: themeStyles.text,
+                    borderColor: themeStyles.withOpacity('text', '20'),
+                    backgroundColor: themeStyles.withOpacity('background', 'DD') 
+                  }
+                ]}
+                placeholder="Add details about your habit"
+                placeholderTextColor={themeStyles.withOpacity('text', '60')}
+                multiline
+                numberOfLines={3}
+                value={newHabit.description}
+                onChangeText={(text) => setNewHabit({ ...newHabit, description: text })}
+              />
+
+              <Text style={[styles.inputLabel, { color: themeStyles.text }]}>Frequency</Text>
+              <View style={styles.optionsContainer}>
+                {frequencyOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[
+                      styles.optionButton,
+                      newHabit.frequency === option.value && { 
+                        backgroundColor: themeStyles.primary,
+                        borderColor: themeStyles.primary 
+                      },
+                      { borderColor: themeStyles.withOpacity('text', '30') }
+                    ]}
+                    onPress={() => setNewHabit({ ...newHabit, frequency: option.value })}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        newHabit.frequency === option.value 
+                          ? { color: 'white' } 
+                          : { color: themeStyles.text }
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={[styles.inputLabel, { color: themeStyles.text }]}>Icon</Text>
+              <View style={styles.iconsContainer}>
+                {iconOptions.map((icon) => (
+                  <TouchableOpacity
+                    key={icon.name}
+                    style={[
+                      styles.iconButton,
+                      newHabit.icon === icon.name && styles.selectedIconButton,
+                      { 
+                        borderColor: icon.color,
+                        backgroundColor: newHabit.icon === icon.name 
+                          ? icon.color + '20' 
+                          : 'transparent'
+                      }
+                    ]}
+                    onPress={() => setNewHabit({ 
+                      ...newHabit, 
+                      icon: icon.name,
+                      color: icon.color 
+                    })}
+                  >
+                    <Ionicons name={icon.name} size={normalize(24)} color={icon.color} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.createButton,
+                  { backgroundColor: themeStyles.primary },
+                  !newHabit.title.trim() && { opacity: 0.6 }
+                ]}
+                onPress={handleCreateHabit}
+                disabled={!newHabit.title.trim()}
+              >
+                <Text style={styles.createButtonText}>Create Habit</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -2459,7 +2656,97 @@ const styles = StyleSheet.create({
     borderRadius: normalize(50),
     opacity: 0.1,
     transform: [{ scale: 1.5 }],
-  }
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  modalScroll: {
+    maxHeight: '100%',
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  optionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 8,
+  },
+  optionButton: {
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  optionText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  iconsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 20,
+  },
+  iconButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    marginBottom: 12,
+  },
+  selectedIconButton: {
+    borderWidth: 2,
+  },
+  createButton: {
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    marginBottom: 30,
+  },
+  createButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
 
 export default HomeScreen; 

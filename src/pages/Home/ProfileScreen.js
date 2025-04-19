@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Switch, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Switch, ScrollView, Alert, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
@@ -46,6 +46,35 @@ const ProfileScreen = () => {
       : APP_MODES.PERSONAL_GROWTH;
     
     switchMode(newMode);
+  };
+
+  // Handle edit profile
+  const handleEditProfile = () => {
+    Alert.alert(
+      'Edit Profile',
+      'What would you like to change?',
+      [
+        {
+          text: 'Change Username',
+          onPress: () => {
+            // In a real app, this would open a text input dialog
+            const newName = 'Rick Sanchez'; // Simulated new name
+            setUsername(newName);
+            Alert.alert('Success', 'Username updated successfully!');
+          }
+        },
+        {
+          text: 'Change Avatar',
+          onPress: () => {
+            Alert.alert('Coming Soon', 'This feature will be available in the next update.');
+          }
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        }
+      ]
+    );
   };
 
   // Handle logout
@@ -101,6 +130,154 @@ const ProfileScreen = () => {
     );
   };
 
+  // Handle backup to cloud
+  const handleBackupToCloud = () => {
+    Alert.alert(
+      'Backup to Cloud',
+      'Do you want to backup your data to the cloud?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Backup',
+          onPress: () => {
+            // Simulate a backup process
+            setTimeout(() => {
+              Alert.alert('Success', 'Your data has been backed up to the cloud.');
+            }, 1000);
+          },
+        },
+      ]
+    );
+  };
+
+  // Handle account settings
+  const handleAccountSettings = () => {
+    Alert.alert(
+      'Account Settings',
+      'Manage your account preferences',
+      [
+        {
+          text: 'Change Email',
+          onPress: () => Alert.alert('Coming Soon', 'This feature will be available in the next update.')
+        },
+        {
+          text: 'Change Password',
+          onPress: () => Alert.alert('Coming Soon', 'This feature will be available in the next update.')
+        },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Delete Account',
+              'Are you sure? This action cannot be undone.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { 
+                  text: 'Delete',
+                  style: 'destructive',
+                  onPress: () => Alert.alert('Action Required', 'Please contact support to delete your account.')
+                }
+              ]
+            );
+          }
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        }
+      ]
+    );
+  };
+
+  // Handle privacy settings
+  const handlePrivacySettings = () => {
+    Alert.alert(
+      'Privacy Settings',
+      'Manage your privacy preferences',
+      [
+        {
+          text: 'Data Collection',
+          onPress: () => {
+            Alert.alert(
+              'Data Collection',
+              'We collect anonymous usage data to improve our app. Would you like to opt out?',
+              [
+                { text: 'Keep Enabled', style: 'cancel' },
+                { text: 'Opt Out', onPress: () => Alert.alert('Success', 'You have opted out of data collection.') }
+              ]
+            );
+          }
+        },
+        {
+          text: 'Privacy Policy',
+          onPress: () => {
+            Alert.alert(
+              'Privacy Policy',
+              'Would you like to view our privacy policy?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { 
+                  text: 'View',
+                  onPress: () => Linking.openURL('https://www.example.com/privacy-policy')
+                }
+              ]
+            );
+          }
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        }
+      ]
+    );
+  };
+
+  // Handle help and support
+  const handleHelpSupport = () => {
+    Alert.alert(
+      'Help & Support',
+      'How can we assist you?',
+      [
+        {
+          text: 'FAQ',
+          onPress: () => Alert.alert('Frequently Asked Questions', 'Our FAQ section is currently being updated.')
+        },
+        {
+          text: 'Contact Support',
+          onPress: () => {
+            Alert.alert(
+              'Contact Support',
+              'How would you like to reach us?',
+              [
+                { 
+                  text: 'Email',
+                  onPress: () => Linking.openURL('mailto:support@example.com')
+                },
+                { 
+                  text: 'Live Chat',
+                  onPress: () => Alert.alert('Coming Soon', 'Live chat support will be available in the next update.')
+                },
+                { text: 'Cancel', style: 'cancel' }
+              ]
+            );
+          }
+        },
+        {
+          text: 'Report Bug',
+          onPress: () => Alert.alert('Coming Soon', 'Bug reporting will be available in the next update.')
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        }
+      ]
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="Profile" />
@@ -120,7 +297,11 @@ const ProfileScreen = () => {
                 Member since April 2023
               </Text>
             </View>
-            <TouchableOpacity style={styles.editButton}>
+            <TouchableOpacity 
+              style={[styles.editButton, { backgroundColor: theme.withOpacity ? theme.withOpacity('primary', '10') : 'rgba(0,0,0,0.05)' }]}
+              onPress={handleEditProfile}
+              activeOpacity={0.7}
+            >
               <Ionicons name="pencil" size={20} color={theme.primary} />
             </TouchableOpacity>
           </View>
@@ -199,7 +380,13 @@ const ProfileScreen = () => {
             <Switch
               trackColor={{ false: '#767577', true: theme.primary + '80' }}
               thumbColor={notificationsEnabled ? theme.primary : '#f4f3f4'}
-              onValueChange={setNotificationsEnabled}
+              onValueChange={(value) => {
+                setNotificationsEnabled(value);
+                Alert.alert(
+                  value ? 'Notifications Enabled' : 'Notifications Disabled',
+                  value ? 'You will receive habit reminders' : 'You will not receive habit reminders'
+                );
+              }}
               value={notificationsEnabled}
             />
           </View>
@@ -217,7 +404,13 @@ const ProfileScreen = () => {
             <Switch
               trackColor={{ false: '#767577', true: theme.primary + '80' }}
               thumbColor={weeklyReportsEnabled ? theme.primary : '#f4f3f4'}
-              onValueChange={setWeeklyReportsEnabled}
+              onValueChange={(value) => {
+                setWeeklyReportsEnabled(value);
+                Alert.alert(
+                  value ? 'Weekly Reports Enabled' : 'Weekly Reports Disabled',
+                  value ? 'You will receive weekly summaries' : 'You will not receive weekly summaries'
+                );
+              }}
               value={weeklyReportsEnabled}
             />
           </View>
@@ -230,6 +423,7 @@ const ProfileScreen = () => {
           <TouchableOpacity 
             style={styles.actionItem}
             onPress={handleExportData}
+            activeOpacity={0.7}
           >
             <View style={styles.actionInfo}>
               <Ionicons name="download-outline" size={22} color={theme.primary} />
@@ -240,7 +434,11 @@ const ProfileScreen = () => {
             <Ionicons name="chevron-forward" size={20} color={theme.text + '60'} />
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.actionItem}>
+          <TouchableOpacity 
+            style={styles.actionItem}
+            onPress={handleBackupToCloud}
+            activeOpacity={0.7}
+          >
             <View style={styles.actionInfo}>
               <Ionicons name="cloud-upload-outline" size={22} color={theme.primary} />
               <Text style={[styles.actionText, { color: theme.text }]}>
@@ -255,7 +453,11 @@ const ProfileScreen = () => {
         <Card>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Account</Text>
           
-          <TouchableOpacity style={styles.actionItem}>
+          <TouchableOpacity 
+            style={styles.actionItem}
+            onPress={handleAccountSettings}
+            activeOpacity={0.7}
+          >
             <View style={styles.actionInfo}>
               <Ionicons name="person-outline" size={22} color={theme.primary} />
               <Text style={[styles.actionText, { color: theme.text }]}>
@@ -265,7 +467,11 @@ const ProfileScreen = () => {
             <Ionicons name="chevron-forward" size={20} color={theme.text + '60'} />
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.actionItem}>
+          <TouchableOpacity 
+            style={styles.actionItem}
+            onPress={handlePrivacySettings}
+            activeOpacity={0.7}
+          >
             <View style={styles.actionInfo}>
               <Ionicons name="shield-checkmark-outline" size={22} color={theme.primary} />
               <Text style={[styles.actionText, { color: theme.text }]}>
@@ -275,7 +481,11 @@ const ProfileScreen = () => {
             <Ionicons name="chevron-forward" size={20} color={theme.text + '60'} />
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.actionItem}>
+          <TouchableOpacity 
+            style={styles.actionItem}
+            onPress={handleHelpSupport}
+            activeOpacity={0.7}
+          >
             <View style={styles.actionInfo}>
               <Ionicons name="help-circle-outline" size={22} color={theme.primary} />
               <Text style={[styles.actionText, { color: theme.text }]}>

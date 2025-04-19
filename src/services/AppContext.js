@@ -9,6 +9,8 @@ export const AppContext = createContext();
 export const APP_MODES = {
   PERSONAL_GROWTH: 'personal_growth',
   ACTION: 'action',
+  COSMIC: 'cosmic',
+  SUNSET: 'sunset'
 };
 
 // Global navigation reference (to be set in RootNavigator)
@@ -181,12 +183,47 @@ export const AppProvider = ({ children }) => {
 
   // Switch between app modes
   const switchMode = async (mode) => {
-    if (Object.values(APP_MODES).includes(mode) && mode !== currentMode) {
+    console.log('Switching to mode:', mode);
+    
+    // Check if the mode is a valid mode string, even if not in APP_MODES
+    if (mode && mode !== currentMode) {
       setCurrentMode(mode);
-      setTheme(THEMES[mode]);
+      
+      // Handle custom themes not defined in THEMES
+      if (THEMES[mode]) {
+        setTheme(THEMES[mode]);
+      } else {
+        // For custom modes like COSMIC and SUNSET, use appropriate fallback theme
+        // This is a simple solution - in a real app, you'd define proper themes
+        if (mode === 'COSMIC') {
+          const customTheme = {
+            ...THEMES[APP_MODES.PERSONAL_GROWTH],
+            primary: '#8b5cf6',
+            secondary: '#c026d3',
+            background: '#130c25',
+            text: '#f8fafc',
+            cardShadow: 'rgba(139, 92, 246, 0.3)'
+          };
+          setTheme(customTheme);
+        } else if (mode === 'SUNSET') {
+          const customTheme = {
+            ...THEMES[APP_MODES.PERSONAL_GROWTH], 
+            primary: '#f97316',
+            secondary: '#fb923c',
+            background: '#fffbeb',
+            text: '#44403c'
+          };
+          setTheme(customTheme);
+        } else {
+          // Default to personal growth theme if unknown mode
+          setTheme(THEMES[APP_MODES.PERSONAL_GROWTH]);
+        }
+      }
       
       try {
+        // Save the mode, even if custom
         await AsyncStorage.setItem('appMode', mode);
+        console.log('Saved app mode:', mode);
       } catch (error) {
         console.log('Error saving app mode:', error);
       }

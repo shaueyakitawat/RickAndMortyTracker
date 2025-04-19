@@ -2,7 +2,7 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 
 // Auth Screens
-import LoginScreen from '../pages/Auth/LoginScreen';
+import LoginScreen from '../pages/Home/LoginScreen';
 import RegisterScreen from '../pages/Auth/RegisterScreen';
 import OnboardingScreen from '../pages/Auth/OnboardingScreen';
 

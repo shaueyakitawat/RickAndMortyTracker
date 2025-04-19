@@ -1,6 +1,7 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRoute } from '@react-navigation/native';
 
 // Components
 import Header from '../../components/common/Header';
@@ -14,6 +15,16 @@ const HabitsScreen = () => {
   const { theme, habits, setHabits } = useContext(AppContext);
   const [modalVisible, setModalVisible] = useState(false);
   const [filter, setFilter] = useState('all'); // all, daily, weekly, monthly
+  const route = useRoute();
+  
+  // Check if we should show the create modal automatically
+  useEffect(() => {
+    if (route.params?.showCreateModal) {
+      setModalVisible(true);
+      // Clear the parameter to prevent reopening on subsequent renders
+      route.params.showCreateModal = false;
+    }
+  }, [route.params]);
   
   // New habit form state
   const [newHabit, setNewHabit] = useState({
