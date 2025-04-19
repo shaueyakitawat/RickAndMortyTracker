@@ -1,12 +1,24 @@
 import React, { useContext } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Dimensions, Platform, PixelRatio, TouchableOpacity } from 'react-native';
 import { AppContext } from '../../services/AppContext';
+
+// For responsive design with reduced scaling
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const scale = Math.min(SCREEN_WIDTH / 375, 1.0); // Cap scale at 1.0 for more compact UI
+const normalize = (size) => {
+  const newSize = size * scale;
+  if (Platform.OS === 'ios') {
+    return Math.round(PixelRatio.roundToNearestPixel(newSize));
+  }
+  return Math.round(PixelRatio.roundToNearestPixel(newSize)) - 2;
+};
 
 const Card = ({
   children,
   style,
-  elevation = 2,
+  elevation = 1,
   padding = 'medium', // none, small, medium, large
+  onPress,
 }) => {
   const { theme } = useContext(AppContext);
   
@@ -15,44 +27,50 @@ const Card = ({
       case 'none':
         return 0;
       case 'small':
-        return 12;
+        return normalize(8);
       case 'medium':
-        return 16;
+        return normalize(12);
       case 'large':
-        return 24;
+        return normalize(16);
       default:
-        return 16;
+        return normalize(12);
     }
   };
 
+  const CardComponent = onPress ? TouchableOpacity : View;
+
   return (
-    <View
+    <CardComponent
       style={[
         styles.card,
         {
           backgroundColor: theme.card,
           padding: getPadding(),
-          shadowColor: theme.text,
+          shadowColor: theme.text + '30',
           elevation: elevation,
         },
         style,
       ]}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.8 : 1}
     >
       {children}
-    </View>
+    </CardComponent>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 12,
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderRadius: normalize(8),
+    padding: normalize(12),
+    marginBottom: normalize(12),
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: normalize(1),
     },
-    marginVertical: 8,
+    shadowOpacity: 0.08,
+    shadowRadius: normalize(2),
+    elevation: 2,
   },
 });
 

@@ -1,92 +1,128 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { useContext } from 'react';
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Dimensions,
+  Platform,
+  PixelRatio,
+  View
+} from 'react-native';
 import { AppContext } from '../../services/AppContext';
+
+// For responsive design with reduced scaling
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const scale = Math.min(SCREEN_WIDTH / 375, 1.0); // Cap scale at 1.0 for more compact UI
+const normalize = (size) => {
+  const newSize = size * scale;
+  if (Platform.OS === 'ios') {
+    return Math.round(PixelRatio.roundToNearestPixel(newSize));
+  }
+  return Math.round(PixelRatio.roundToNearestPixel(newSize)) - 2;
+};
 
 const Button = ({
   title,
   onPress,
-  variant = 'primary', // primary, secondary, outline, text
-  size = 'medium', // small, medium, large
-  loading = false,
-  disabled = false,
-  fullWidth = false,
   style,
   textStyle,
+  variant = 'filled',
+  size = 'medium',
+  loading = false,
+  icon = null,
+  fullWidth = false,
+  disabled = false,
 }) => {
-  const { theme } = useContext(AppContext);
+  const { theme } = React.useContext(AppContext);
 
-  const getButtonStyles = () => {
-    let buttonStyles = [styles.button];
-    let textStyles = [styles.text];
-
-    // Variant styles
-    switch (variant) {
-      case 'primary':
-        buttonStyles.push({ backgroundColor: theme.primary });
-        textStyles.push({ color: '#ffffff' });
-        break;
-      case 'secondary':
-        buttonStyles.push({ backgroundColor: theme.secondary });
-        textStyles.push({ color: theme.text });
-        break;
-      case 'outline':
-        buttonStyles.push({
-          backgroundColor: 'transparent',
-          borderWidth: 1,
-          borderColor: theme.primary,
-        });
-        textStyles.push({ color: theme.primary });
-        break;
-      case 'text':
-        buttonStyles.push({
-          backgroundColor: 'transparent',
-          paddingHorizontal: 0,
-          paddingVertical: 0,
-        });
-        textStyles.push({ color: theme.primary });
-        break;
+  // Determine the button's style based on variant
+  const getButtonStyle = () => {
+    if (variant === 'outline') {
+      return {
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: theme.primary,
+      };
+    } else if (variant === 'text') {
+      return {
+        backgroundColor: 'transparent',
+        paddingHorizontal: normalize(4),
+        paddingVertical: normalize(2),
+      };
     }
-
-    // Size styles
-    switch (size) {
-      case 'small':
-        buttonStyles.push(styles.smallButton);
-        textStyles.push(styles.smallText);
-        break;
-      case 'large':
-        buttonStyles.push(styles.largeButton);
-        textStyles.push(styles.largeText);
-        break;
-    }
-
-    // Full width
-    if (fullWidth) {
-      buttonStyles.push(styles.fullWidth);
-    }
-
-    // Disabled state
-    if (disabled || loading) {
-      buttonStyles.push(styles.disabledButton);
-      textStyles.push(styles.disabledText);
-    }
-
-    return { buttonStyles, textStyles };
+    return { backgroundColor: theme.primary };
   };
 
-  const { buttonStyles, textStyles } = getButtonStyles();
+  // Determine text color based on variant
+  const getTextColor = () => {
+    if (variant === 'outline' || variant === 'text') {
+      return theme.primary;
+    }
+    return '#FFFFFF';
+  };
+
+  // Determine button size
+  const getButtonSize = () => {
+    if (size === 'small') {
+      return {
+        paddingVertical: normalize(4),
+        paddingHorizontal: normalize(8),
+        height: normalize(28),
+      };
+    } else if (size === 'large') {
+      return {
+        paddingVertical: normalize(10),
+        paddingHorizontal: normalize(16),
+        height: normalize(44),
+      };
+    }
+    return {
+      paddingVertical: normalize(6),
+      paddingHorizontal: normalize(12),
+      height: normalize(36),
+    };
+  };
+
+  // Determine text size
+  const getTextSize = () => {
+    if (size === 'small') {
+      return normalize(12);
+    } else if (size === 'large') {
+      return normalize(15);
+    }
+    return normalize(13);
+  };
 
   return (
     <TouchableOpacity
-      style={[...buttonStyles, style]}
+      style={[
+        styles.button,
+        getButtonStyle(),
+        getButtonSize(),
+        fullWidth && styles.fullWidth,
+        disabled && styles.disabled,
+        style,
+      ]}
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={variant === 'outline' ? theme.primary : '#ffffff'} />
+        <ActivityIndicator color={getTextColor()} size="small" />
       ) : (
-        <Text style={[...textStyles, textStyle]}>{title}</Text>
+        <View style={styles.buttonContent}>
+          {icon && <View style={styles.iconContainer}>{icon}</View>}
+          <Text
+            style={[
+              styles.buttonText,
+              { color: getTextColor(), fontSize: getTextSize() },
+              textStyle,
+            ]}
+          >
+            {title}
+          </Text>
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -94,41 +130,26 @@ const Button = ({
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: normalize(6),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  text: {
-    fontSize: 16,
-    fontWeight: '600',
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  smallButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-  },
-  smallText: {
-    fontSize: 14,
-  },
-  largeButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 10,
-  },
-  largeText: {
-    fontSize: 18,
-    fontWeight: '700',
+  iconContainer: {
+    marginRight: normalize(4),
   },
   fullWidth: {
     width: '100%',
   },
-  disabledButton: {
-    opacity: 0.6,
+  buttonText: {
+    fontWeight: '500',
   },
-  disabledText: {
-    opacity: 0.8,
+  disabled: {
+    opacity: 0.6,
   },
 });
 

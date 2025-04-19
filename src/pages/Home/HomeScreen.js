@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -8,29 +8,93 @@ import {
   Image,
   Animated,
   Dimensions,
-  Alert
+  Alert,
+  RefreshControl,
+  useWindowDimensions,
+  Platform,
+  PixelRatio
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import firebase from '../../services/firebase';
 
 // Components
 import Header from '../../components/common/Header';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
+import RewardsSystem from '../../components/rewards/RewardsSystem';
 
 // Context and Services
-import { AppContext, APP_MODES } from '../../services/AppContext';
+import { AppContext, APP_MODES, THEMES } from '../../services/AppContext';
 import { formatDate, getStreakCount } from '../../services';
 
-const { width } = Dimensions.get('window');
+// Get screen dimensions for responsive design
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Scale factors for responsive typography and spacing
+const scale = Math.min(SCREEN_WIDTH / 375, 1.0); // Cap scale at 1.0 for more compact UI
+const normalize = (size) => {
+  const newSize = size * scale;
+  if (Platform.OS === 'ios') {
+    return Math.round(PixelRatio.roundToNearestPixel(newSize));
+  }
+  return Math.round(PixelRatio.roundToNearestPixel(newSize)) - 2;
+};
+
+// Use a default theme for static styles
+const DefaultTheme = THEMES[APP_MODES.PERSONAL_GROWTH];
+
+// Add this function before the HomeScreen component definition
+// This function provides a simple way to access theme styles safely
+const getThemeStyles = (themeObj, fallbackTheme = DefaultTheme) => {
+  // If we have a valid theme from context, use it, otherwise use fallback
+  return {
+    // Basic colors
+    text: themeObj?.text || fallbackTheme.text || '#333333',
+    textSecondary: themeObj?.textSecondary || fallbackTheme.textSecondary || '#666666',
+    primary: themeObj?.primary || fallbackTheme.primary || '#8b5cf6',
+    secondary: themeObj?.secondary || fallbackTheme.secondary || '#c4b5fd',
+    background: themeObj?.background || fallbackTheme.background || '#f5f3ff',
+    card: themeObj?.card || fallbackTheme.card || '#ffffff',
+    accent: themeObj?.accent || fallbackTheme.accent || '#a78bfa',
+    
+    // Helper method for semi-transparent colors
+    withOpacity: (color, opacity) => {
+      const baseColor = themeObj?.[color] || fallbackTheme[color];
+      return baseColor ? baseColor + opacity : fallbackTheme.text + opacity;
+    }
+  };
+};
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const { theme, currentMode, habits, setHabits, switchMode } = useContext(AppContext);
+  // Create a theme helper that will work even if theme is undefined
+  const themeStyles = getThemeStyles(theme);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [todayHabits, setTodayHabits] = useState([]);
   const [completedToday, setCompletedToday] = useState(0);
   const [fadeAnim] = useState(new Animated.Value(0));
+  const [refreshing, setRefreshing] = useState(false);
+  const [weather, setWeather] = useState(null);
+  const [quote, setQuote] = useState(null);
+  const [dateTime, setDateTime] = useState(new Date());
+  const [showTips, setShowTips] = useState(true);
+  const [waterIntake, setWaterIntake] = useState(0);
+  const [showRewards, setShowRewards] = useState(false);
+  const [lastRewardPoints, setLastRewardPoints] = useState(0);
+  const [rewardNotification, setRewardNotification] = useState(false);
+  const [userPoints, setUserPoints] = useState(125); // Mock points
+  const [achievements, setAchievements] = useState([
+    { id: 1, title: "Early Bird", description: "Complete a habit before 8am", icon: "sunny-outline", earned: true },
+    { id: 2, title: "Streak Master", description: "Maintain a 7-day streak", icon: "flame-outline", earned: true },
+    { id: 3, title: "Hydration Hero", description: "Drink 8 glasses of water for 3 days", icon: "water-outline", earned: false },
+    { id: 4, title: "Habit Builder", description: "Create 5 habits", icon: "build-outline", earned: false }
+  ]);
+  
+  // Animated values for interactive UI
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const windowDimensions = useWindowDimensions();
 
   // Load dummy data for demo
   useEffect(() => {
@@ -51,6 +115,8 @@ const HomeScreen = () => {
         completedDates: ['2023-04-15', '2023-04-16', '2023-04-17', '2023-04-18'],
         icon: 'leaf',
         color: '#8b5cf6',
+        mode: 'personal_growth', // Mode-specific habit
+        streak: 4
       },
       {
         id: '2',
@@ -60,6 +126,8 @@ const HomeScreen = () => {
         completedDates: ['2023-04-15', '2023-04-17', '2023-04-18'],
         icon: 'book',
         color: '#3b82f6',
+        mode: 'both', // Available in both modes
+        streak: 2
       },
       {
         id: '3',
@@ -69,31 +137,111 @@ const HomeScreen = () => {
         completedDates: ['2023-04-14', '2023-04-17'],
         icon: 'fitness',
         color: '#ef4444',
+        mode: 'action', // Mode-specific habit
+        streak: 1
       },
+      {
+        id: '4',
+        title: 'Learn coding',
+        description: 'Practice programming for 30 minutes',
+        frequency: 'daily',
+        completedDates: ['2023-04-15', '2023-04-16', '2023-04-17'],
+        icon: 'code-slash',
+        color: '#10b981',
+        mode: 'action', // Mode-specific habit
+        streak: 3
+      },
+      {
+        id: '5',
+        title: 'Drink water',
+        description: 'Drink 8 glasses of water',
+        frequency: 'daily',
+        completedDates: ['2023-04-15', '2023-04-16', '2023-04-17', '2023-04-18'],
+        icon: 'water',
+        color: '#0ea5e9',
+        mode: 'both', // Available in both modes
+        streak: 4
+      },
+      {
+        id: '6',
+        title: 'Journal writing',
+        description: 'Write in journal for 10 minutes',
+        frequency: 'daily',
+        completedDates: ['2023-04-16', '2023-04-17', '2023-04-18'],
+        icon: 'pencil',
+        color: '#f59e0b',
+        mode: 'personal_growth', // Mode-specific habit
+        streak: 3
+      },
+      {
+        id: '7',
+        title: 'Power hour',
+        description: 'One hour of focused deep work',
+        frequency: 'daily',
+        completedDates: ['2023-04-17', '2023-04-18'],
+        icon: 'timer',
+        color: '#ec4899',
+        mode: 'action', // Mode-specific habit
+        streak: 2
+      }
     ];
 
     setHabits(dummyHabits);
 
+    // Simulate weather data with accurate temperature conversion
+    const tempC = 22; // 22°C
+    const tempF = Math.round(tempC * 9/5 + 32); // Convert to Fahrenheit
+    setWeather({
+      tempC: tempC,
+      tempF: tempF,
+      condition: 'Sunny',
+      icon: 'sunny'
+    });
+
+    // Daily quote
+    setQuote({
+      text: "Habits are the compound interest of self-improvement.",
+      author: "James Clear"
+    });
+
+    // Mock user points for display
+    setUserPoints(125);
+
+    loadData();
+
+    // Timer to update current time
+    const timerID = setInterval(() => setDateTime(new Date()), 60000);
+    return () => clearInterval(timerID);
+  }, []);
+
+  // Load data function for pull to refresh
+  const loadData = () => {
     // Calculate streak
-    const allCompletedDates = dummyHabits.reduce(
+    const allCompletedDates = habits.reduce(
       (dates, habit) => [...dates, ...habit.completedDates],
       []
     );
     const streak = getStreakCount(allCompletedDates);
     setCurrentStreak(streak);
 
-    // Get today's habits
+    // Get today's habits based on current mode
     const today = new Date();
-    setTodayHabits(dummyHabits.filter(habit => habit.frequency === 'daily'));
+    const filteredHabits = habits.filter(habit => 
+      (habit.frequency === 'daily' || 
+       (habit.frequency === 'weekly' && today.getDay() === 1)) // Show weekly habits on Monday
+      && (habit.mode === 'both' || habit.mode === currentMode.toLowerCase().replace(' ', '_'))
+    );
+    
+    setTodayHabits(filteredHabits);
     
     // Count completed habits for today
     const todayStr = today.toISOString().split('T')[0];
-    const completed = dummyHabits.filter(habit => 
+    const completed = habits.filter(habit => 
       habit.completedDates.includes(todayStr)
     ).length;
     
     setCompletedToday(completed);
-  }, []);
+  };
 
   // Re-animate when mode changes
   useEffect(() => {
@@ -103,7 +251,19 @@ const HomeScreen = () => {
       duration: 800,
       useNativeDriver: true,
     }).start();
+    
+    // Reload data when mode changes to update today's habits
+    loadData();
   }, [currentMode]);
+
+  // Handle pull to refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // Simulate a network request
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    loadData();
+    setRefreshing(false);
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -113,6 +273,25 @@ const HomeScreen = () => {
   };
 
   const toggleAppMode = () => {
+    // Animation for mode switch
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1.05,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
     const newMode = currentMode === APP_MODES.PERSONAL_GROWTH 
       ? APP_MODES.ACTION 
       : APP_MODES.PERSONAL_GROWTH;
@@ -134,150 +313,608 @@ const HomeScreen = () => {
 
   const handleHabitCheck = (habitId) => {
     // In a real app, this would mark the habit as completed for today
-    Alert.alert('Success', 'Habit marked as completed for today!');
+    const updatedHabits = habits.map(habit => {
+      if (habit.id === habitId) {
+        const today = new Date().toISOString().split('T')[0];
+        const alreadyCompleted = habit.completedDates.includes(today);
+        
+        if (alreadyCompleted) {
+          // Remove today's date from completedDates
+          return {
+            ...habit,
+            completedDates: habit.completedDates.filter(date => date !== today)
+          };
+        } else {
+          // Add today's date to completedDates
+          return {
+            ...habit,
+            completedDates: [...habit.completedDates, today]
+          };
+        }
+      }
+      return habit;
+    });
+    
+    setHabits(updatedHabits);
+    
+    // Update completed count
+    const today = new Date().toISOString().split('T')[0];
+    const completed = updatedHabits.filter(habit => 
+      habit.completedDates.includes(today)
+    ).length;
+    
+    setCompletedToday(completed);
+    
+    // Show success message
+    Alert.alert('Success', 'Habit status updated!');
+  };
+
+  const increaseWaterIntake = () => {
+    setWaterIntake(prev => prev + 1);
+    if (waterIntake === 7) {
+      Alert.alert('Great job!', 'You\'ve met your water intake goal for today!');
+    }
+  };
+
+  // Handle reward earned callback
+  const handleRewardEarned = (points) => {
+    setLastRewardPoints(points);
+    setRewardNotification(true);
+    
+    // Hide notification after 3 seconds
+    setTimeout(() => {
+      setRewardNotification(false);
+    }, 3000);
+  };
+
+  // Update the toggleHabitCompletion function to work with our mock Firebase implementation
+  const toggleHabitCompletion = async (habitId) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const habitIndex = todayHabits.findIndex(h => h.id === habitId);
+      
+      if (habitIndex !== -1) {
+        const habit = {...todayHabits[habitIndex]};
+        const isCompleted = habit.completedDates.includes(today);
+        
+        // Toggle completion status
+        let updatedCompletedDates = [...habit.completedDates];
+        if (isCompleted) {
+          // Remove today's date if already completed
+          updatedCompletedDates = updatedCompletedDates.filter(date => date !== today);
+        } else {
+          // Add today's date if not completed
+          updatedCompletedDates.push(today);
+        }
+        
+        // This logs the update to the console, simulating a database update
+        await firebase.firestore.collection('habits').doc(habitId).update({
+          completedDates: updatedCompletedDates,
+        });
+        
+        // Update local state with new completion data
+        const updatedHabits = [...habits].map(h => {
+          if (h.id === habitId) {
+            return { ...h, completedDates: updatedCompletedDates };
+          }
+          return h;
+        });
+        setHabits(updatedHabits);
+        
+        // Update today's habits list
+        const updatedTodayHabits = [...todayHabits];
+        updatedTodayHabits[habitIndex] = {
+          ...habit,
+          completedDates: updatedCompletedDates
+        };
+        setTodayHabits(updatedTodayHabits);
+        
+        // Update completed count
+        setCompletedToday(updatedCompletedDates.includes(today) 
+          ? completedToday + 1 
+          : completedToday - 1);
+          
+        // Show animation if completing a habit
+        if (!isCompleted) {
+          // Show completion animation and add points
+          setShowRewards(true);
+          setUserPoints(prev => prev + 5); // Add points when completing a habit
+          setLastRewardPoints(5);
+          setRewardNotification(true);
+          
+          // Hide notifications after some time
+          setTimeout(() => {
+            setShowRewards(false);
+            setRewardNotification(false);
+          }, 2000);
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling habit completion:', error);
+    }
+  };
+
+  // Add after the toggleHabitCompletion function
+  const calculateStreak = (completedDates) => {
+    if (!completedDates || completedDates.length === 0) return 0;
+    
+    // Sort dates in ascending order
+    const sortedDates = [...completedDates].sort();
+    
+    // Get today's date and yesterday's date
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    today.setDate(today.getDate() - 1);
+    const yesterdayStr = today.toISOString().split('T')[0];
+    
+    // Check if we completed the habit today or yesterday
+    const hasToday = completedDates.includes(todayStr);
+    const hasYesterday = completedDates.includes(yesterdayStr);
+    
+    // If neither today nor yesterday is completed, streak is 0
+    if (!hasToday && !hasYesterday) return 0;
+    
+    // Start counting streak
+    let streak = hasToday ? 1 : 0;
+    let currentDate = new Date(hasToday ? todayStr : yesterdayStr);
+    
+    // Keep checking previous days until we find a break in the streak
+    while (true) {
+      currentDate.setDate(currentDate.getDate() - 1);
+      const dateStr = currentDate.toISOString().split('T')[0];
+      
+      if (completedDates.includes(dateStr)) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  };
+
+  // Add this function after calculateStreak
+  const handleAcceptChallenge = () => {
+    // Show a success message
+    Alert.alert('Challenge Accepted!', 
+      `You've accepted the daily ${currentMode === APP_MODES.PERSONAL_GROWTH ? 'boost' : 'challenge'}. 
+      Complete it to earn extra points!`
+    );
+    
+    // Award points for accepting the challenge
+    setUserPoints(prev => prev + 3);
+    setLastRewardPoints(3);
+    setRewardNotification(true);
+    
+    // Hide notification after 3 seconds
+    setTimeout(() => {
+      setRewardNotification(false);
+    }, 3000);
+    
+    // In a real app, this would also update the backend
+    // navigation.navigate('Habits');
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: themeStyles.background }]}>
       <Header 
         title="Rick&Morty" 
-        rightIcon="settings-outline"
-        onRightIconPress={() => navigation.navigate('Settings')}
+        rightIcon="trophy-outline"
+        onRightIconPress={() => setShowRewards(!showRewards)}
       />
       
-      <Animated.ScrollView 
-        style={[styles.scrollView, { opacity: fadeAnim }]} 
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.greetingContainer}>
-          <Text style={[styles.greeting, { color: theme.text }]}>{getGreeting()}</Text>
-          <Text style={[styles.modeName, { color: theme.primary }]}>
-            {currentMode === APP_MODES.PERSONAL_GROWTH ? 'Personal Growth Mode' : 'Action Mode'}
+      {/* Reward notification */}
+      {rewardNotification && (
+        <Animated.View 
+          style={[
+            styles.rewardNotification,
+            { backgroundColor: themeStyles.primary }
+          ]}
+        >
+          <Ionicons name="trophy" size={normalize(16)} color="#FFF" />
+          <Text style={styles.rewardNotificationText}>
+            Achievement unlocked! +{lastRewardPoints} points
           </Text>
-        </View>
-
-        {/* Mode Switcher Card */}
-        <Card style={styles.modeCard}>
-          <View style={styles.modeContent}>
-            <View style={styles.modeIconContainer}>
-              <View style={[
-                styles.modeIconCircle, 
-                { backgroundColor: theme.primary + '20' }
-              ]}>
-                <Ionicons name={getModeIcon()} size={24} color={theme.primary} />
-              </View>
-            </View>
-            <View style={styles.modeInfo}>
-              <Text style={[styles.modeTitle, { color: theme.text }]}>
-                {currentMode === APP_MODES.PERSONAL_GROWTH ? 'Personal Growth' : 'Action Mode'}
-              </Text>
-              <Text style={[styles.modeDescription, { color: theme.text + '99' }]}>
-                {getModeDescription()}
-              </Text>
-            </View>
-            <TouchableOpacity 
-              style={[styles.modeSwitchButton, { backgroundColor: theme.primary }]}
-              onPress={toggleAppMode}
-            >
-              <Ionicons 
-                name="swap-horizontal" 
-                size={18} 
-                color="#fff" 
-              />
-            </TouchableOpacity>
-          </View>
-        </Card>
-
-        {/* Stats card */}
-        <Card style={styles.statsCard}>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: theme.primary }]}>{currentStreak}</Text>
-              <Text style={[styles.statLabel, { color: theme.text }]}>Day Streak</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: theme.primary }]}>{completedToday}</Text>
-              <Text style={[styles.statLabel, { color: theme.text }]}>Completed Today</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: theme.primary }]}>{habits.length}</Text>
-              <Text style={[styles.statLabel, { color: theme.text }]}>Total Habits</Text>
-            </View>
-          </View>
-        </Card>
-
-        {/* Today's habits */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Today's Habits</Text>
-          
-          {todayHabits.length > 0 ? (
-            todayHabits.map(habit => (
-              <Card key={habit.id} style={styles.habitCard}>
-                <View style={styles.habitHeader}>
-                  <View style={[styles.habitIconContainer, { backgroundColor: habit.color + '20' }]}>
-                    <Ionicons name={habit.icon} size={24} color={habit.color} />
-                  </View>
-                  <View style={styles.habitInfo}>
-                    <Text style={[styles.habitTitle, { color: theme.text }]}>{habit.title}</Text>
-                    <Text style={[styles.habitDescription, { color: theme.text + '99' }]}>
-                      {habit.description}
-                    </Text>
-                  </View>
-                  <TouchableOpacity 
-                    style={styles.checkButton}
-                    onPress={() => handleHabitCheck(habit.id)}
-                  >
-                    <Ionicons 
-                      name="checkmark-circle-outline" 
-                      size={28} 
-                      color={theme.primary} 
-                    />
-                  </TouchableOpacity>
-                </View>
-              </Card>
-            ))
-          ) : (
-            <Text style={[styles.emptyText, { color: theme.text + '80' }]}>
-              No habits scheduled for today.
-            </Text>
-          )}
-        </View>
-
-        {/* Daily Challenge Card */}
-        <Card style={styles.challengeCard}>
-          <View style={styles.challengeHeader}>
-            <Ionicons 
-              name={currentMode === APP_MODES.PERSONAL_GROWTH ? "star" : "trophy"} 
-              size={22} 
-              color={theme.primary} 
-            />
-            <Text style={[styles.challengeTitle, { color: theme.text }]}>
-              Daily {currentMode === APP_MODES.PERSONAL_GROWTH ? 'Boost' : 'Challenge'}
-            </Text>
-          </View>
-          <Text style={[styles.challengeText, { color: theme.text + '99' }]}>
-            {currentMode === APP_MODES.PERSONAL_GROWTH 
-              ? "Take 5 minutes to express gratitude for one thing in your life."
-              : "Complete all your tasks 10 minutes faster than usual today!"}
-          </Text>
-          <Button 
-            title="Accept" 
-            variant="outline"
-            size="small"
-            style={styles.challengeButton}
+        </Animated.View>
+      )}
+      
+      {showRewards ? (
+        <Card style={styles.rewardsCard}>
+          <RewardsSystem 
+            habits={habits}
+            streakCount={currentStreak}
+            waterIntake={waterIntake}
+            onRewardEarned={handleRewardEarned}
           />
         </Card>
+      ) : (
+        <Animated.ScrollView 
+          style={[styles.scrollView, { opacity: fadeAnim }]} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[themeStyles.primary]}
+              tintColor={themeStyles.primary}
+            />
+          }
+        >
+          <View style={styles.greetingContainer}>
+            <Text style={[styles.greeting, { color: themeStyles.text, fontSize: normalize(28) }]}>{getGreeting()}</Text>
+            <Text style={[styles.modeName, { color: themeStyles.primary, fontSize: normalize(16) }]}>
+              {currentMode === APP_MODES.PERSONAL_GROWTH ? 'Personal Growth Mode' : 'Action Mode'}
+            </Text>
+          </View>
 
-        {/* Add Habit Button */}
-        <Button 
-          title="Add New Habit" 
-          onPress={() => navigation.navigate('Habits')}
-          style={styles.addButton}
-          fullWidth
-        />
-      </Animated.ScrollView>
+          {/* Date & Weather Card */}
+          <Card style={styles.weatherCard}>
+            <View style={styles.weatherContent}>
+              <View>
+                <Text style={[styles.dateText, { color: themeStyles.text }]}>
+                  {dateTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                </Text>
+                <Text style={[styles.timeText, { color: themeStyles.text + '99' }]}>
+                  {dateTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                </Text>
+              </View>
+              
+              {weather && (
+                <View style={styles.weatherInfo}>
+                  <Ionicons name={weather.icon} size={normalize(24)} color={DefaultTheme.primary} />
+                  <Text style={[styles.tempText, { color: themeStyles.text }]}>{weather.tempC}°C / {weather.tempF}°F</Text>
+                  <Text style={[styles.weatherDesc, { color: themeStyles.text + '99' }]}>{weather.condition}</Text>
+                </View>
+              )}
+            </View>
+          </Card>
+
+          {/* Mode Switcher Card */}
+          <Animated.View style={{transform: [{scale: scaleAnim}]}}>
+            <Card style={styles.modeCard}>
+              <View style={styles.modeContent}>
+                <View style={styles.modeIconContainer}>
+                  <View style={[
+                    styles.modeIconCircle, 
+                    { backgroundColor: themeStyles.primary + '20' }
+                  ]}>
+                    <Ionicons name={getModeIcon()} size={normalize(24)} color={DefaultTheme.primary} />
+                  </View>
+                </View>
+                <View style={styles.modeInfo}>
+                  <Text style={[styles.modeTitle, { color: themeStyles.text, fontSize: normalize(16) }]}>
+                    {currentMode === APP_MODES.PERSONAL_GROWTH ? 'Personal Growth' : 'Action Mode'}
+                  </Text>
+                  <Text style={[styles.modeDescription, { color: themeStyles.text + '99', fontSize: normalize(14) }]}>
+                    {getModeDescription()}
+                  </Text>
+                </View>
+                <TouchableOpacity 
+                  style={[styles.modeSwitchButton, { backgroundColor: themeStyles.primary }]}
+                  onPress={toggleAppMode}
+                >
+                  <Ionicons 
+                    name="swap-horizontal" 
+                    size={normalize(18)} 
+                    color="#fff" 
+                  />
+                </TouchableOpacity>
+              </View>
+            </Card>
+          </Animated.View>
+
+          {/* Quote of the day */}
+          {quote && (
+            <Card style={styles.quoteCard}>
+              <Ionicons name="quote" size={normalize(20)} color={DefaultTheme.primary} style={styles.quoteIcon} />
+              <Text style={[styles.quoteText, { color: themeStyles.text, fontSize: normalize(15) }]}>
+                "{quote.text}"
+              </Text>
+              <Text style={[styles.quoteAuthor, { color: themeStyles.text + '80', fontSize: normalize(13) }]}>
+                — {quote.author}
+              </Text>
+            </Card>
+          )}
+
+          {/* Stats card */}
+          <Card style={styles.statsCard}>
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={[styles.statValue, { color: themeStyles.primary, fontSize: normalize(32) }]}>{currentStreak}</Text>
+                <Text style={[styles.statLabel, { color: themeStyles.text, fontSize: normalize(14) }]}>Day Streak</Text>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.statItem}>
+                <Text style={[styles.statValue, { color: themeStyles.primary, fontSize: normalize(32) }]}>{completedToday}</Text>
+                <Text style={[styles.statLabel, { color: themeStyles.text, fontSize: normalize(14) }]}>Completed Today</Text>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.statItem}>
+                <Text style={[styles.statValue, { color: themeStyles.primary, fontSize: normalize(32) }]}>{habits.length}</Text>
+                <Text style={[styles.statLabel, { color: themeStyles.text, fontSize: normalize(14) }]}>Total Habits</Text>
+              </View>
+            </View>
+          </Card>
+
+          {/* Water Tracker - Modified to be smaller */}
+          <Card style={styles.waterTrackerCard}>
+            <View style={styles.waterTrackerHeader}>
+              <View style={styles.waterTitleContainer}>
+                <Ionicons name="water-outline" size={normalize(18)} color={DefaultTheme.primary} />
+                <Text style={[styles.waterTitle, { color: themeStyles.text, fontSize: normalize(15) }]}>
+                  Water Tracker
+                </Text>
+              </View>
+              <Text style={[styles.waterCount, { color: themeStyles.primary }]}>
+                {waterIntake}/8 glasses
+              </Text>
+            </View>
+            
+            <View style={styles.waterGlassesContainer}>
+              {[...Array(8)].map((_, i) => (
+                <TouchableOpacity 
+                  key={i} 
+                  style={[
+                    styles.waterGlass, 
+                    { borderColor: themeStyles.primary, backgroundColor: i < waterIntake ? themeStyles.primary + '50' : 'transparent' }
+                  ]}
+                  onPress={increaseWaterIntake}
+                >
+                  <Ionicons 
+                    name="water" 
+                    size={normalize(16)} 
+                    color={i < waterIntake ? themeStyles.primary : themeStyles.primary + '40'} 
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Card>
+
+          {/* Profile and Points Section - New */}
+          <Card style={styles.profileCard}>
+            <View style={styles.profileHeader}>
+              <View style={styles.profileInfo}>
+                <View style={styles.profileAvatar}>
+                  <Text style={styles.profileInitials}>RM</Text>
+                </View>
+                <View style={styles.profileDetails}>
+                  <Text style={[styles.profileName, { color: themeStyles.text, fontSize: normalize(16) }]}>
+                    Rick Morty
+                  </Text>
+                  <Text style={[styles.profileBio, { color: themeStyles.text + '99', fontSize: normalize(13) }]}>
+                    Habit enthusiast
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.pointsContainer}>
+                <Ionicons name="star" size={normalize(18)} color="#FFD700" />
+                <Text style={[styles.pointsText, { color: themeStyles.text, fontSize: normalize(18) }]}>
+                  {userPoints} pts
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.levelProgress}>
+              <View style={[styles.progressBar, { backgroundColor: themeStyles.primary + '30' }]}>
+                <View 
+                  style={[
+                    styles.progressFill, 
+                    { width: `${(userPoints % 100) / 100 * 100}%`, backgroundColor: themeStyles.primary }
+                  ]}
+                />
+              </View>
+              <Text style={[styles.levelText, { color: themeStyles.text + '80', fontSize: normalize(12) }]}>
+                Level {Math.floor(userPoints / 100) + 1} • {100 - (userPoints % 100)} points to next level
+              </Text>
+            </View>
+          </Card>
+
+          {/* Achievements Section - New */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Achievements</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Achievements')}>
+                <Text style={styles.seeAllBtn}>See All</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.achievementsScrollView}
+            >
+              {achievements.map((achievement) => (
+                <View key={achievement.id} style={styles.achievementCard}>
+                  <View style={[
+                    styles.achievementIconContainer, 
+                    { 
+                      backgroundColor: achievement.earned ? themeStyles.primary + '20' : themeStyles.textSecondary + '20',
+                      borderColor: achievement.earned ? themeStyles.primary : themeStyles.textSecondary + '50',
+                    }
+                  ]}>
+                    <Ionicons 
+                      name={achievement.icon} 
+                      size={normalize(22)} 
+                      color={achievement.earned ? themeStyles.primary : themeStyles.textSecondary} 
+                    />
+                  </View>
+                  <Text style={[
+                    styles.achievementTitle, 
+                    { 
+                      color: achievement.earned ? themeStyles.text : themeStyles.textSecondary,
+                      fontSize: normalize(13)
+                    }
+                  ]}>
+                    {achievement.title}
+                  </Text>
+                  <Text style={[
+                    styles.achievementDesc, 
+                    { 
+                      color: themeStyles.text + '80',
+                      fontSize: normalize(11)
+                    }
+                  ]}>
+                    {achievement.description}
+                  </Text>
+                  {!achievement.earned && (
+                    <View style={styles.achievementLock}>
+                      <Ionicons name="lock-closed" size={normalize(12)} color={DefaultTheme.textSecondary + '90'} />
+                    </View>
+                  )}
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Habit Criteria - New */}
+          <Card style={styles.criteriaCard}>
+            <View style={styles.criteriaHeader}>
+              <Ionicons name="checkmark-circle-outline" size={normalize(20)} color={DefaultTheme.primary} />
+              <Text style={[styles.criteriaTitle, { color: themeStyles.text, fontSize: normalize(16) }]}>
+                Habit Criteria
+              </Text>
+            </View>
+            <View style={styles.criteriaList}>
+              <View style={styles.criteriaItem}>
+                <Ionicons name="time-outline" size={normalize(16)} color={DefaultTheme.primary} />
+                <Text style={[styles.criteriaText, { color: themeStyles.text + '99', fontSize: normalize(14) }]}>
+                  Consistency is key: same time daily
+                </Text>
+              </View>
+              <View style={styles.criteriaItem}>
+                <Ionicons name="flag-outline" size={normalize(16)} color={DefaultTheme.primary} />
+                <Text style={[styles.criteriaText, { color: themeStyles.text + '99', fontSize: normalize(14) }]}>
+                  Start with small, specific goals
+                </Text>
+              </View>
+              <View style={styles.criteriaItem}>
+                <Ionicons name="link-outline" size={normalize(16)} color={DefaultTheme.primary} />
+                <Text style={[styles.criteriaText, { color: themeStyles.text + '99', fontSize: normalize(14) }]}>
+                  Stack with existing habits
+                </Text>
+              </View>
+            </View>
+          </Card>
+
+          {/* Today's Habits */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: themeStyles.text }]}>Today's Habits</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Habits')}>
+                <Text style={[styles.seeAllBtn, { color: themeStyles.primary }]}>See All</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {todayHabits.length > 0 ? (
+              <View style={styles.habitsContainer}>
+                {todayHabits.map((habit) => {
+                  const today = new Date().toISOString().split('T')[0];
+                  const isCompleted = habit.completedDates.includes(today);
+                  const streakCount = calculateStreak(habit.completedDates);
+                  
+                  return (
+                    <TouchableOpacity
+                      key={habit.id}
+                      style={[styles.habitCard, { backgroundColor: themeStyles.card }]}
+                      onPress={() => toggleHabitCompletion(habit.id)}
+                    >
+                      <View style={styles.habitIconContainer}>
+                        <View style={[
+                          styles.habitIcon,
+                          { backgroundColor: habit.color || themeStyles.primary }
+                        ]}>
+                          <Ionicons name={habit.icon || "water-outline"} size={normalize(22)} color="#fff" />
+                        </View>
+                      </View>
+                      
+                      <View style={styles.habitInfo}>
+                        <Text style={[styles.habitName, { color: themeStyles.text }]}>{habit.title}</Text>
+                        <View style={styles.streakContainer}>
+                          <Ionicons name="flame-outline" size={normalize(14)} color={DefaultTheme.accent} />
+                          <Text style={[styles.streakText, { color: themeStyles.text + '80' }]}>{streakCount} day{streakCount !== 1 ? 's' : ''}</Text>
+                        </View>
+                      </View>
+                      
+                      <View style={styles.habitActions}>
+                        <TouchableOpacity
+                          style={[
+                            styles.habitCheckbox,
+                            { borderColor: themeStyles.primary },
+                            isCompleted && { backgroundColor: themeStyles.primary }
+                          ]}
+                        >
+                          {isCompleted && (
+                            <Ionicons name="checkmark" size={normalize(16)} color="#fff" />
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ) : (
+              <View style={styles.emptyHabitsContainer}>
+                <Text style={[styles.emptyText, { color: themeStyles.text + '80' }]}>No habits scheduled for today</Text>
+                <TouchableOpacity 
+                  style={[styles.addHabitBtn, { backgroundColor: themeStyles.primary }]}
+                  onPress={() => navigation.navigate('CreateHabit')}
+                >
+                  <Text style={styles.addHabitBtnText}>Add a new habit</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Daily Challenge Card */}
+          <Card style={styles.challengeCard}>
+            <View style={styles.challengeHeader}>
+              <Ionicons 
+                name={currentMode === APP_MODES.PERSONAL_GROWTH ? "star" : "trophy"} 
+                size={normalize(22)} 
+                color={DefaultTheme.primary} 
+              />
+              <Text style={[styles.challengeTitle, { color: DefaultTheme.text, fontSize: normalize(16) }]}>
+                Daily {currentMode === APP_MODES.PERSONAL_GROWTH ? 'Boost' : 'Challenge'}
+              </Text>
+            </View>
+            <Text style={[styles.challengeText, { color: DefaultTheme.text + '99', fontSize: normalize(14) }]}>
+              {currentMode === APP_MODES.PERSONAL_GROWTH 
+                ? "Take 5 minutes to express gratitude for one thing in your life."
+                : "Complete all your tasks 10 minutes faster than usual today!"}
+            </Text>
+            <Button 
+              title="Accept" 
+              variant="outline"
+              size="small"
+              style={styles.challengeButton}
+              onPress={handleAcceptChallenge}
+            />
+          </Card>
+
+          {/* Quick Tips */}
+          {showTips && (
+            <Card style={styles.tipsCard}>
+              <View style={styles.tipsHeader}>
+                <View style={styles.tipsHeaderLeft}>
+                  <Ionicons name="bulb-outline" size={normalize(22)} color={DefaultTheme.primary} />
+                  <Text style={[styles.tipsTitle, { color: DefaultTheme.text, fontSize: normalize(16) }]}>
+                    Quick Tips
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => setShowTips(false)}>
+                  <Ionicons name="close-outline" size={normalize(22)} color={DefaultTheme.text + '60'} />
+                </TouchableOpacity>
+              </View>
+              <Text style={[styles.tipText, { color: DefaultTheme.text + '99', fontSize: normalize(14) }]}>
+                {currentMode === APP_MODES.PERSONAL_GROWTH 
+                  ? "Start small: Focus on one habit at a time for better results."
+                  : "Batch similar tasks together to increase efficiency."}
+              </Text>
+            </Card>
+          )}
+        </Animated.ScrollView>
+      )}
     </View>
   );
 };
@@ -288,34 +925,61 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: normalize(16),
   },
   greetingContainer: {
-    marginTop: 16,
-    marginBottom: 20,
+    marginTop: normalize(16),
+    marginBottom: normalize(20),
   },
   greeting: {
-    fontSize: 28,
     fontWeight: 'bold',
   },
   modeName: {
-    fontSize: 16,
-    marginTop: 4,
+    marginTop: normalize(4),
+  },
+  weatherCard: {
+    marginBottom: normalize(16),
+  },
+  weatherContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dateText: {
+    fontSize: normalize(16),
+    fontWeight: '500',
+  },
+  timeText: {
+    fontSize: normalize(14),
+    marginTop: normalize(2),
+  },
+  weatherInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tempText: {
+    fontSize: normalize(18),
+    fontWeight: '600',
+    marginLeft: normalize(4),
+    marginRight: normalize(4),
+  },
+  weatherDesc: {
+    fontSize: normalize(14),
   },
   modeCard: {
-    marginBottom: 20,
+    marginBottom: normalize(16),
   },
   modeContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   modeIconContainer: {
-    marginRight: 14,
+    marginRight: normalize(14),
   },
   modeIconCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: normalize(46),
+    height: normalize(46),
+    borderRadius: normalize(23),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -323,22 +987,38 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modeTitle: {
-    fontSize: 16,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: normalize(4),
   },
   modeDescription: {
-    fontSize: 14,
   },
   modeSwitchButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: normalize(36),
+    height: normalize(36),
+    borderRadius: normalize(18),
     alignItems: 'center',
     justifyContent: 'center',
   },
+  quoteCard: {
+    marginBottom: normalize(16),
+    paddingVertical: normalize(16),
+    alignItems: 'center',
+  },
+  quoteIcon: {
+    marginBottom: normalize(8),
+  },
+  quoteText: {
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginBottom: normalize(8),
+    lineHeight: normalize(22),
+  },
+  quoteAuthor: {
+    textAlign: 'right',
+    alignSelf: 'flex-end',
+  },
   statsCard: {
-    marginBottom: 24,
+    marginBottom: normalize(16),
   },
   statsRow: {
     flexDirection: 'row',
@@ -350,83 +1030,338 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 32,
     fontWeight: 'bold',
   },
   statLabel: {
-    fontSize: 14,
-    marginTop: 4,
+    marginTop: normalize(4),
   },
   divider: {
     width: 1,
-    height: 40,
+    height: normalize(40),
     backgroundColor: 'rgba(0,0,0,0.1)',
   },
-  sectionContainer: {
-    marginBottom: 24,
+  waterTrackerCard: {
+    marginBottom: normalize(16),
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 12,
+  waterTrackerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: normalize(12),
   },
-  habitCard: {
-    marginBottom: 12,
-  },
-  habitHeader: {
+  waterTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  habitIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  waterTitle: {
+    fontWeight: '600',
+    marginLeft: normalize(8),
+  },
+  waterCount: {
+    fontSize: normalize(14),
+    fontWeight: '500',
+  },
+  waterGlassesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  waterGlass: {
+    width: '11%', // Changed from 23% to make them smaller
+    aspectRatio: 0.9,
+    borderWidth: 1,
+    borderRadius: normalize(6), // Reduced from 8
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginBottom: normalize(6),
+    marginHorizontal: '1%',
+  },
+  section: {
+    marginBottom: normalize(16),
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: normalize(10),
+  },
+  sectionTitle: {
+    fontWeight: '600',
+  },
+  seeAllBtn: {
+    color: DefaultTheme.primary,
+    fontWeight: '500',
+  },
+  habitsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  habitCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: normalize(12),
+    padding: normalize(12),
+    marginBottom: normalize(12),
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  habitIconContainer: {
+    marginRight: normalize(12),
+  },
+  habitIcon: {
+    width: normalize(44),
+    height: normalize(44),
+    borderRadius: normalize(22),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   habitInfo: {
     flex: 1,
   },
-  habitTitle: {
-    fontSize: 16,
+  habitName: {
+    fontSize: normalize(16),
     fontWeight: '600',
+    marginBottom: normalize(4),
   },
-  habitDescription: {
-    fontSize: 14,
-    marginTop: 2,
+  streakContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  checkButton: {
-    padding: 8,
+  streakText: {
+    fontSize: normalize(12),
+    marginLeft: normalize(4),
+  },
+  habitActions: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  habitCheckbox: {
+    width: normalize(24),
+    height: normalize(24),
+    borderRadius: normalize(12),
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  habitCheckboxCompleted: {
+    // The background color will be set dynamically
+  },
+  emptyHabitsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emptyText: {
-    textAlign: 'center',
-    padding: 20,
     fontStyle: 'italic',
   },
+  addHabitBtn: {
+    width: '100%',
+    padding: normalize(16),
+    borderRadius: normalize(8),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addHabitBtnText: {
+    color: '#FFF',
+    fontWeight: '500',
+    fontSize: normalize(16),
+  },
   challengeCard: {
-    marginBottom: 24,
+    marginBottom: normalize(16),
   },
   challengeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: normalize(10),
   },
   challengeTitle: {
-    fontSize: 16,
     fontWeight: '600',
-    marginLeft: 8,
+    marginLeft: normalize(8),
   },
   challengeText: {
-    fontSize: 14,
-    marginBottom: 12,
-    lineHeight: 20,
+    marginBottom: normalize(12),
+    lineHeight: normalize(20),
   },
   challengeButton: {
     alignSelf: 'flex-start',
   },
-  addButton: {
-    marginBottom: 30,
+  tipsCard: {
+    marginBottom: normalize(16),
+  },
+  tipsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: normalize(10),
+  },
+  tipsHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tipsTitle: {
+    fontWeight: '600',
+    marginLeft: normalize(8),
+  },
+  tipText: {
+    lineHeight: normalize(20),
+  },
+  rewardNotification: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? normalize(90) : normalize(70),
+    left: normalize(16),
+    right: normalize(16),
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: normalize(8),
+    borderRadius: normalize(8),
+    zIndex: 10,
+  },
+  rewardNotificationText: {
+    color: '#FFF',
+    marginLeft: normalize(8),
+    fontWeight: '500',
+    fontSize: normalize(13),
+  },
+  rewardsCard: {
+    flex: 1,
+    marginHorizontal: normalize(12),
+    marginBottom: normalize(12),
+    marginTop: normalize(4),
+  },
+  profileCard: {
+    marginBottom: normalize(16),
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: normalize(10),
+  },
+  profileInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileAvatar: {
+    width: normalize(40),
+    height: normalize(40),
+    borderRadius: normalize(20),
+    backgroundColor: DefaultTheme.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: normalize(12),
+  },
+  profileInitials: {
+    color: '#fff',
+    fontSize: normalize(16),
+    fontWeight: 'bold',
+  },
+  profileDetails: {
+    justifyContent: 'center',
+  },
+  profileName: {
+    fontWeight: '600',
+    marginBottom: normalize(2),
+  },
+  profileBio: {
+  },
+  pointsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: DefaultTheme.primary + '10',
+    paddingHorizontal: normalize(10),
+    paddingVertical: normalize(6),
+    borderRadius: normalize(16),
+  },
+  pointsText: {
+    fontWeight: '600',
+    marginLeft: normalize(4),
+  },
+  levelProgress: {
+    marginTop: normalize(4),
+  },
+  progressBar: {
+    height: normalize(6),
+    borderRadius: normalize(3),
+    marginBottom: normalize(6),
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: normalize(3),
+  },
+  levelText: {
+    textAlign: 'right',
+  },
+  achievementsScrollView: {
+    marginBottom: normalize(10),
+  },
+  achievementCard: {
+    width: normalize(120),
+    backgroundColor: '#ffffff',
+    borderRadius: normalize(12),
+    padding: normalize(10),
+    marginRight: normalize(10),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+    elevation: 2,
+  },
+  achievementIconContainer: {
+    width: normalize(50),
+    height: normalize(50),
+    borderRadius: normalize(25),
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: normalize(8),
+    borderWidth: 1,
+  },
+  achievementTitle: {
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: normalize(4),
+  },
+  achievementDesc: {
+    textAlign: 'center',
+  },
+  achievementLock: {
+    position: 'absolute',
+    top: normalize(8),
+    right: normalize(8),
+    backgroundColor: '#ffffff90',
+    width: normalize(20),
+    height: normalize(20),
+    borderRadius: normalize(10),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  criteriaCard: {
+    marginBottom: normalize(16),
+  },
+  criteriaHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: normalize(12),
+  },
+  criteriaTitle: {
+    fontWeight: '600',
+    marginLeft: normalize(8),
+  },
+  criteriaList: {
+  },
+  criteriaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: normalize(8),
+  },
+  criteriaText: {
+    marginLeft: normalize(10),
   },
 });
 

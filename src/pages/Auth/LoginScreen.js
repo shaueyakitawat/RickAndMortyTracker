@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -9,7 +9,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert
+  Alert,
+  Dimensions,
+  PixelRatio,
+  ActivityIndicator
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,17 +20,73 @@ import { Ionicons } from '@expo/vector-icons';
 
 // Components
 import Button from '../../components/common/Button';
+import { AppContext } from '../../services/AppContext';
+
+// For responsive design
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const scale = SCREEN_WIDTH / 375; // Standard width
+const verticalScale = size => SCREEN_HEIGHT / 812 * size; // Standard height
+
+const normalize = (size) => {
+  const newSize = size * scale;
+  if (Platform.OS === 'ios') {
+    return Math.round(PixelRatio.roundToNearestPixel(newSize));
+  }
+  return Math.round(PixelRatio.roundToNearestPixel(newSize)) - 2;
+};
 
 const LoginScreen = () => {
   const navigation = useNavigation();
+  const { theme } = React.useContext(AppContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
+  const [savedEmail, setSavedEmail] = useState('');
+
+  // Check for saved credentials
+  useEffect(() => {
+    const loadSavedEmail = async () => {
+      try {
+        const email = await AsyncStorage.getItem('savedEmail');
+        if (email) {
+          setSavedEmail(email);
+          setEmail(email);
+        }
+      } catch (error) {
+        console.log('Error loading saved email:', error);
+      }
+    };
+    
+    loadSavedEmail();
+  }, []);
+
+  const validateForm = () => {
+    if (!email.trim()) {
+      setFormError('Email is required');
+      return false;
+    }
+    
+    // Simple email validation
+    const emailRegex = /\S+@\S+\.\S+/;
+    if (!emailRegex.test(email)) {
+      setFormError('Please enter a valid email address');
+      return false;
+    }
+    
+    if (!password.trim()) {
+      setFormError('Password is required');
+      return false;
+    }
+    
+    setFormError('');
+    return true;
+  };
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please enter both email and password.');
+    if (!validateForm()) {
       return;
     }
 
@@ -36,7 +95,14 @@ const LoginScreen = () => {
     try {
       // In a real app, this would be an API call to authenticate
       // For demo purposes, we'll just simulate success
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Save email if "Remember me" is checked
+      if (rememberMe) {
+        await AsyncStorage.setItem('savedEmail', email);
+      } else {
+        await AsyncStorage.removeItem('savedEmail');
+      }
       
       // Store auth token
       await AsyncStorage.setItem('userToken', 'demo-token');
@@ -58,7 +124,7 @@ const LoginScreen = () => {
       ]);
     } catch (error) {
       setLoading(false);
-      Alert.alert('Error', 'Login failed. Please try again.');
+      setFormError('Login failed. Please try again.');
     }
   };
 
@@ -66,64 +132,146 @@ const LoginScreen = () => {
     navigation.navigate('Register');
   };
 
+  const handleForgotPassword = () => {
+    Alert.alert(
+      'Reset Password',
+      'An email with password reset instructions will be sent to your email address.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Send Email',
+          onPress: () => {
+            if (!email.trim()) {
+              setFormError('Please enter your email address first');
+            } else {
+              Alert.alert('Email Sent', 'Check your inbox for password reset instructions');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
+  const toggleRememberMe = () => {
+    setRememberMe(!rememberMe);
+  };
+
+  const handleGoogleLogin = () => {
+    Alert.alert('Google Login', 'Google authentication would be initiated here in a production app');
+  };
+
+  const handleAppleLogin = () => {
+    Alert.alert('Apple Login', 'Apple authentication would be initiated here in a production app');
+  };
+
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Image 
             source={require('../../../assets/images/icon.png')}
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, { color: theme.text }]}>Welcome Back</Text>
+          <Text style={[styles.subtitle, { color: theme.text + '99' }]}>
             Login to continue tracking your habits
           </Text>
         </View>
         
+        {formError ? (
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle" size={normalize(16)} color="#f44336" />
+            <Text style={styles.errorText}>{formError}</Text>
+          </View>
+        ) : null}
+        
         <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
+          <View style={[styles.inputContainer, { borderColor: theme.text + '20' }]}>
+            <Ionicons name="mail-outline" size={normalize(20)} color={theme.text + '80'} style={styles.inputIcon} />
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: theme.text }]}
               placeholder="Email"
+              placeholderTextColor={theme.text + '60'}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={text => {
+                setEmail(text);
+                setFormError('');
+              }}
               keyboardType="email-address"
               autoCapitalize="none"
+              returnKeyType="next"
             />
           </View>
           
-          <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
+          <View style={[styles.inputContainer, { borderColor: theme.text + '20' }]}>
+            <Ionicons name="lock-closed-outline" size={normalize(20)} color={theme.text + '80'} style={styles.inputIcon} />
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: theme.text }]}
               placeholder="Password"
+              placeholderTextColor={theme.text + '60'}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={text => {
+                setPassword(text);
+                setFormError('');
+              }}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
+              returnKeyType="done"
+              onSubmitEditing={handleLogin}
             />
             <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeIcon}>
               <Ionicons 
                 name={showPassword ? "eye-off-outline" : "eye-outline"} 
-                size={20} 
-                color="#666" 
+                size={normalize(20)} 
+                color={theme.text + '80'} 
               />
             </TouchableOpacity>
           </View>
           
-          <TouchableOpacity style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
+          <View style={styles.optionsRow}>
+            <TouchableOpacity 
+              style={styles.rememberMeContainer} 
+              onPress={toggleRememberMe}
+              activeOpacity={0.7}
+            >
+              <View style={[
+                styles.checkbox, 
+                { borderColor: theme.primary },
+                rememberMe && { backgroundColor: theme.primary }
+              ]}>
+                {rememberMe && (
+                  <Ionicons name="checkmark" size={normalize(14)} color="white" />
+                )}
+              </View>
+              <Text style={[styles.rememberMeText, { color: theme.text + '99' }]}>
+                Remember me
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.forgotPassword}
+              onPress={handleForgotPassword}
+            >
+              <Text style={[styles.forgotPasswordText, { color: theme.primary }]}>
+                Forgot Password?
+              </Text>
+            </TouchableOpacity>
+          </View>
           
           <Button
             title="Login"
@@ -133,49 +281,37 @@ const LoginScreen = () => {
             fullWidth
           />
           
-          {/* Direct login for testing */}
-          <Button
-            title="Skip Login (For Testing)"
-            onPress={async () => {
-              await AsyncStorage.setItem('userToken', 'demo-token');
-              Alert.alert('Success', 'Skipped login for testing', [
-                {
-                  text: 'OK',
-                  onPress: () => {
-                    // Force reload to update auth state
-                    navigation.reset({
-                      index: 0,
-                      routes: [{ name: 'Home' }],
-                    });
-                  }
-                }
-              ]);
-            }}
-            style={{marginTop: 8, backgroundColor: '#4CAF50'}}
-            fullWidth
-          />
+          <Text style={[styles.directLoginText, { color: theme.text + 'AA' }]}>
+            For testing, you can use any email and password
+          </Text>
           
           <View style={styles.orContainer}>
-            <View style={styles.divider} />
-            <Text style={styles.orText}>OR</Text>
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: theme.text + '20' }]} />
+            <Text style={[styles.orText, { color: theme.text + '80' }]}>OR</Text>
+            <View style={[styles.divider, { backgroundColor: theme.text + '20' }]} />
           </View>
           
-          <TouchableOpacity style={styles.socialButton}>
-            <Ionicons name="logo-google" size={20} color="#DB4437" />
-            <Text style={styles.socialButtonText}>Continue with Google</Text>
+          <TouchableOpacity 
+            style={[styles.socialButton, { borderColor: theme.text + '20' }]}
+            onPress={handleGoogleLogin}
+          >
+            <Ionicons name="logo-google" size={normalize(20)} color="#DB4437" />
+            <Text style={[styles.socialButtonText, { color: theme.text }]}>Continue with Google</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.socialButton}>
-            <Ionicons name="logo-apple" size={20} color="#000000" />
-            <Text style={styles.socialButtonText}>Continue with Apple</Text>
+          <TouchableOpacity 
+            style={[styles.socialButton, { borderColor: theme.text + '20' }]}
+            onPress={handleAppleLogin}
+          >
+            <Ionicons name="logo-apple" size={normalize(20)} color="#000000" />
+            <Text style={[styles.socialButtonText, { color: theme.text }]}>Continue with Apple</Text>
           </TouchableOpacity>
         </View>
         
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
+          <Text style={[styles.footerText, { color: theme.text + '99' }]}>Don't have an account? </Text>
           <TouchableOpacity onPress={handleSignUp}>
-            <Text style={styles.signupText}>Sign Up</Text>
+            <Text style={[styles.signupText, { color: theme.primary }]}>Sign Up</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -186,114 +322,145 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
   },
   scrollContent: {
     flexGrow: 1,
-    padding: 24,
-    justifyContent: 'center',
+    paddingHorizontal: normalize(24),
+    paddingTop: normalize(40),
+    paddingBottom: normalize(30),
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: normalize(32),
   },
   logo: {
-    width: 80,
-    height: 80,
-    marginBottom: 16,
+    width: normalize(80),
+    height: normalize(80),
+    marginBottom: normalize(16),
   },
   title: {
-    fontSize: 28,
+    fontSize: normalize(24),
     fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333',
+    marginBottom: normalize(8),
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: normalize(16),
     textAlign: 'center',
   },
+  errorContainer: {
+    backgroundColor: '#ffebee',
+    paddingHorizontal: normalize(12),
+    paddingVertical: normalize(8),
+    borderRadius: normalize(6),
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: normalize(16),
+  },
+  errorText: {
+    color: '#f44336',
+    marginLeft: normalize(8),
+    fontSize: normalize(14),
+  },
   form: {
-    marginBottom: 24,
+    marginBottom: normalize(24),
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    marginBottom: 16,
-    paddingHorizontal: 12,
-    backgroundColor: '#f9fafb',
+    borderRadius: normalize(8),
+    marginBottom: normalize(16),
+    paddingHorizontal: normalize(12),
+    backgroundColor: 'rgba(250,250,250,0.2)',
+    height: normalize(50),
   },
   inputIcon: {
-    marginRight: 8,
+    marginRight: normalize(8),
   },
   input: {
     flex: 1,
-    height: 48,
-    fontSize: 16,
-    color: '#333',
+    fontSize: normalize(16),
   },
   eyeIcon: {
-    padding: 8,
+    padding: normalize(8),
+  },
+  optionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: normalize(24),
+  },
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checkbox: {
+    width: normalize(18),
+    height: normalize(18),
+    borderRadius: normalize(4),
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: normalize(8),
+  },
+  rememberMeText: {
+    fontSize: normalize(14),
   },
   forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
+    padding: normalize(4),
   },
   forgotPasswordText: {
-    color: '#8b5cf6',
-    fontSize: 14,
+    fontSize: normalize(14),
     fontWeight: '500',
   },
   loginButton: {
-    marginBottom: 24,
+    marginBottom: normalize(16),
+  },
+  directLoginText: {
+    textAlign: 'center',
+    fontSize: normalize(12),
+    marginBottom: normalize(16),
+    fontStyle: 'italic',
   },
   orContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: normalize(16),
   },
   divider: {
     flex: 1,
     height: 1,
-    backgroundColor: '#ddd',
   },
   orText: {
-    marginHorizontal: 16,
-    color: '#666',
+    marginHorizontal: normalize(16),
     fontWeight: '500',
+    fontSize: normalize(14),
   },
   socialButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 48,
+    height: normalize(48),
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    marginBottom: 16,
+    borderRadius: normalize(8),
+    marginBottom: normalize(16),
   },
   socialButtonText: {
-    marginLeft: 12,
-    fontSize: 16,
+    marginLeft: normalize(12),
+    fontSize: normalize(15),
     fontWeight: '500',
-    color: '#333',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 16,
+    marginTop: normalize(8),
   },
   footerText: {
-    color: '#666',
-    fontSize: 14,
+    fontSize: normalize(14),
   },
   signupText: {
-    color: '#8b5cf6',
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: normalize(14),
   },
 });
 
