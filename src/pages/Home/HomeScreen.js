@@ -17,6 +17,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import firebase from '../../services/firebase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Components
 import Header from '../../components/common/Header';
@@ -907,6 +908,26 @@ const HomeScreen = () => {
     </Card>
   )}
 
+  // At the start of the HomeScreen component, add this useEffect
+  useEffect(() => {
+    console.log('HomeScreen loaded directly');
+    
+    // Ensure we have a token set for proper authentication state
+    const ensureAuthenticated = async () => {
+      try {
+        const token = await AsyncStorage.getItem('userToken');
+        if (!token) {
+          await AsyncStorage.setItem('userToken', 'demo-token');
+          console.log('Authentication token set in HomeScreen');
+        }
+      } catch (error) {
+        console.error('Error setting authentication in HomeScreen:', error);
+      }
+    };
+    
+    ensureAuthenticated();
+  }, []);
+
   return (
     <View style={[styles.container, { 
       backgroundColor: themeStyles.background,
@@ -1616,89 +1637,97 @@ const HomeScreen = () => {
                   const streakCount = habit.streak || calculateStreak(habit.completedDates);
                   
                   return (
-                    <View
+                    <TouchableOpacity
                       key={habit.id}
-                      style={{
+                      style={[styles.habitCard, { 
+                        backgroundColor: themeStyles.card,
+                        borderWidth: 1,
+                        borderColor: isCompleted 
+                          ? themeStyles.withOpacity('primary', '50') 
+                          : themeStyles.withOpacity('primary', '20'),
+                        shadowColor: themeStyles.primary,
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.2,
+                        shadowRadius: 8,
                         marginBottom: normalize(12),
-                        opacity: 1,
-                        transform: [{ translateY: 0 }],
-                      }}
+                        width: '100%',
+                      }]}
+                      onPress={() => toggleHabitCompletion(habit.id)}
+                      activeOpacity={0.7}
                     >
+                      <View style={styles.habitIconContainer}>
+                        <View
+                          style={[
+                            styles.habitIcon,
+                            { 
+                              backgroundColor: habit.color || themeStyles.primary,
+                              width: normalize(48),
+                              height: normalize(48),
+                              borderRadius: normalize(24),
+                            }
+                          ]}
+                        >
+                          <Ionicons name={habit.icon || "water-outline"} size={normalize(24)} color="#fff" />
+                        </View>
+                      </View>
+                      
+                      <View style={styles.habitInfo}>
+                        <Text style={[styles.habitName, { 
+                          color: themeStyles.text,
+                          fontWeight: '700',
+                          fontSize: normalize(16),
+                          marginBottom: normalize(6),
+                        }]}>{habit.title}</Text>
+                        <View style={styles.streakContainer}>
+                          <Ionicons name="flame-outline" size={normalize(14)} color={themeStyles.accent} />
+                          <Text style={[styles.streakText, { 
+                            color: themeStyles.text + '80',
+                            fontSize: normalize(13), 
+                          }]}>{streakCount} day{streakCount !== 1 ? 's' : ''}</Text>
+                        </View>
+                      </View>
+                      
                       <TouchableOpacity
-                        style={[styles.habitCard, { 
-                          backgroundColor: themeStyles.card,
-                          borderWidth: 1,
-                          borderColor: themeStyles.withOpacity('primary', '20'),
-                          shadowColor: themeStyles.primary,
-                          shadowOffset: { width: 0, height: 4 },
-                          shadowOpacity: 0.2,
-                          shadowRadius: 8,
-                        }]}
+                        style={[
+                          styles.habitCheckbox,
+                          { 
+                            borderColor: themeStyles.primary,
+                            width: normalize(28),
+                            height: normalize(28),
+                            borderRadius: normalize(14),
+                            borderWidth: 2,
+                            transform: [{ scale: isCompleted ? 1.1 : 1 }],
+                          },
+                          isCompleted && { 
+                            backgroundColor: themeStyles.primary,
+                            shadowColor: themeStyles.primary,
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.4,
+                            shadowRadius: 4,
+                          }
+                        ]}
                         onPress={() => toggleHabitCompletion(habit.id)}
                       >
-                        <View style={styles.habitIconContainer}>
-                          <View
-                            style={[
-                              styles.habitIcon,
-                              { backgroundColor: habit.color || themeStyles.primary }
-                            ]}
-                          >
-                            <Ionicons name={habit.icon || "water-outline"} size={normalize(22)} color="#fff" />
-                          </View>
-                        </View>
-                        
-                        <View style={styles.habitInfo}>
-                          <Text style={[styles.habitName, { 
-                            color: themeStyles.text,
-                            fontWeight: '700',
-                          }]}>{habit.title}</Text>
-                          <View style={styles.streakContainer}>
-                            <Ionicons name="flame-outline" size={normalize(14)} color={themeStyles.accent} />
-                            <Text style={[styles.streakText, { color: themeStyles.text + '80' }]}>{streakCount} day{streakCount !== 1 ? 's' : ''}</Text>
-                          </View>
-                        </View>
-                        
-                        <View style={styles.habitActions}>
-                          <Animated.View>
-                            <TouchableOpacity
-                              style={[
-                                styles.habitCheckbox,
-                                { 
-                                  borderColor: themeStyles.primary,
-                                  transform: [{ scale: isCompleted ? 1.1 : 1 }],
-                                },
-                                isCompleted && { 
-                                  backgroundColor: themeStyles.primary,
-                                  shadowColor: themeStyles.primary,
-                                  shadowOffset: { width: 0, height: 2 },
-                                  shadowOpacity: 0.4,
-                                  shadowRadius: 4,
-                                }
-                              ]}
-                            >
-                              {isCompleted && (
-                                <Ionicons name="checkmark" size={normalize(16)} color="#fff" />
-                              )}
-                            </TouchableOpacity>
-                          </Animated.View>
-                        </View>
+                        {isCompleted && (
+                          <Ionicons name="checkmark" size={normalize(18)} color="#fff" />
+                        )}
                       </TouchableOpacity>
-                    </View>
+                    </TouchableOpacity>
                   );
                 })}
               </View>
             ) : (
-              <View style={styles.emptyHabitsContainer}>
-                <Text style={[styles.emptyText, { color: themeStyles.text + '80' }]}>No habits scheduled for today</Text>
+              <View style={[styles.emptyHabitsContainer, { padding: normalize(20) }]}>
+                <Text style={[styles.emptyText, { color: themeStyles.text + '80', marginBottom: normalize(16) }]}>No habits scheduled for today</Text>
                 <TouchableOpacity 
                   style={[styles.addHabitBtn, { 
-                    overflow: 'hidden', 
                     borderRadius: normalize(8),
                     backgroundColor: themeStyles.primary,
+                    paddingVertical: normalize(12),
                   }]}
                   onPress={() => navigation.navigate('CreateHabit')}
                 >
-                  <Text style={styles.addHabitBtnText}>Add a new habit</Text>
+                  <Text style={[styles.addHabitBtnText, { fontSize: normalize(16) }]}>Add a new habit</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -1983,25 +2012,23 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   habitsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    width: '100%',
   },
   habitCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: normalize(16), // Increased for more modern look
-    padding: normalize(14),
+    borderRadius: normalize(16),
+    padding: normalize(16),
     marginBottom: normalize(12),
-    elevation: 3, // Slightly increased
+    elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
   habitIconContainer: {
-    marginRight: normalize(12),
+    marginRight: normalize(16),
   },
   habitIcon: {
     width: normalize(44),

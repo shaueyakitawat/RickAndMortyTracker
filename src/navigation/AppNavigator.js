@@ -1,6 +1,5 @@
 import React, { useContext } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
@@ -38,7 +37,7 @@ const HabitsStack = () => {
 };
 
 // Tab Navigator
-const TabNavigator = () => {
+const AppNavigator = () => {
   const { theme, currentMode } = useContext(AppContext);
   
   return (
@@ -107,14 +106,6 @@ const TabNavigator = () => {
         }}
       />
     </Tab.Navigator>
-  );
-};
-
-const AppNavigator = () => {
-  return (
-    <NavigationContainer>
-      <TabNavigator />
-    </NavigationContainer>
   );
 };
 

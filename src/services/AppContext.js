@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CommonActions } from '@react-navigation/native';
 
 // Create context
 export const AppContext = createContext();
@@ -8,6 +9,33 @@ export const AppContext = createContext();
 export const APP_MODES = {
   PERSONAL_GROWTH: 'personal_growth',
   ACTION: 'action',
+};
+
+// Global navigation reference (to be set in RootNavigator)
+export let navigationRef = null;
+
+// Set the navigation reference
+export const setNavigationRef = (ref) => {
+  navigationRef = ref;
+};
+
+// Navigate to a specific screen
+export const navigate = (name, params) => {
+  if (navigationRef?.isReady()) {
+    navigationRef.navigate(name, params);
+  }
+};
+
+// Reset navigation stack
+export const resetNavigation = (routeName) => {
+  if (navigationRef?.isReady()) {
+    navigationRef.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: routeName }],
+      })
+    );
+  }
 };
 
 // Theme colors for different modes
@@ -132,6 +160,7 @@ export const AppProvider = ({ children }) => {
   const [theme, setTheme] = useState(THEMES[APP_MODES.PERSONAL_GROWTH]);
   const [habits, setHabits] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Load saved mode on start
   useEffect(() => {
@@ -164,15 +193,54 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // Handle user logout
+  const logout = async () => {
+    try {
+      console.log('Logout function called');
+      
+      // Clear the auth token
+      await AsyncStorage.removeItem('userToken');
+      
+      // Update authentication state
+      setIsAuthenticated(false);
+      
+      // Force navigation to Login screen through RootNavigator
+      if (navigationRef?.isReady()) {
+        console.log('Navigation ref is ready, resetting to Login');
+        navigationRef.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          })
+        );
+      } else {
+        console.log('Navigation ref not ready');
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error during logout:', error);
+      return false;
+    }
+  };
+
+  // Set authentication status - called from RootNavigator
+  const setAuthStatus = (status) => {
+    setIsAuthenticated(status);
+  };
+
   // Value object to be provided to consumers
   const contextValue = {
     currentMode,
     theme,
     habits,
     isLoading,
+    isAuthenticated,
     switchMode,
     setHabits,
     setIsLoading,
+    logout,
+    setAuthStatus,
   };
 
   return (

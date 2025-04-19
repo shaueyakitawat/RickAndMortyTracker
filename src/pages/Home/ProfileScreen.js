@@ -1,7 +1,8 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Switch, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 
 // Components
 import Header from '../../components/common/Header';
@@ -12,21 +13,31 @@ import Button from '../../components/common/Button';
 import { AppContext, APP_MODES } from '../../services/AppContext';
 
 const ProfileScreen = () => {
-  const { theme, currentMode, switchMode } = useContext(AppContext);
+  const navigation = useNavigation();
+  const { theme, currentMode, switchMode, logout, isAuthenticated } = useContext(AppContext);
   
   // Profile settings state
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [weeklyReportsEnabled, setWeeklyReportsEnabled] = useState(true);
   const [username, setUsername] = useState('User');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  // Dummy user data
-  const userStats = {
-    totalHabits: 12,
-    totalCompletions: 87,
-    memberSince: 'April 2023',
-    longestStreak: 15,
-  };
+  
+  // Check login status on mount
+  useEffect(() => {
+    // Check for auth token to update UI
+    const checkAuthStatus = async () => {
+      try {
+        const token = await AsyncStorage.getItem('userToken');
+        // Set username if logged in
+        if (token) {
+          setUsername('User'); // In a real app, fetch user profile data here
+        }
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+      }
+    };
+    
+    checkAuthStatus();
+  }, [isAuthenticated]);
 
   // Handle app mode switch
   const handleModeSwitch = () => {
@@ -49,13 +60,19 @@ const ProfileScreen = () => {
         },
         {
           text: 'Logout',
+          style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.removeItem('userToken');
-              setIsLoggedIn(false);
-              // In a real app, we would navigate to the login screen
+              // Use the global logout function which handles everything
+              const success = await logout();
+              
+              if (!success) {
+                // Only show error if the logout function fails
+                Alert.alert('Error', 'Something went wrong. Please try again.');
+              }
             } catch (error) {
-              console.log('Error logging out:', error);
+              console.error('Error logging out:', error);
+              Alert.alert('Error', 'Something went wrong. Please try again.');
             }
           },
         },
@@ -100,7 +117,7 @@ const ProfileScreen = () => {
             <View style={styles.profileInfo}>
               <Text style={[styles.username, { color: theme.text }]}>{username}</Text>
               <Text style={[styles.memberSince, { color: theme.text + '80' }]}>
-                Member since {userStats.memberSince}
+                Member since April 2023
               </Text>
             </View>
             <TouchableOpacity style={styles.editButton}>
@@ -111,7 +128,7 @@ const ProfileScreen = () => {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: theme.primary }]}>
-                {userStats.totalHabits}
+                12
               </Text>
               <Text style={[styles.statLabel, { color: theme.text + '80' }]}>
                 Habits
@@ -120,7 +137,7 @@ const ProfileScreen = () => {
             
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: theme.primary }]}>
-                {userStats.totalCompletions}
+                87
               </Text>
               <Text style={[styles.statLabel, { color: theme.text + '80' }]}>
                 Completions
@@ -129,7 +146,7 @@ const ProfileScreen = () => {
             
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: theme.primary }]}>
-                {userStats.longestStreak}
+                15
               </Text>
               <Text style={[styles.statLabel, { color: theme.text + '80' }]}>
                 Best Streak
@@ -250,6 +267,16 @@ const ProfileScreen = () => {
           
           <TouchableOpacity style={styles.actionItem}>
             <View style={styles.actionInfo}>
+              <Ionicons name="shield-checkmark-outline" size={22} color={theme.primary} />
+              <Text style={[styles.actionText, { color: theme.text }]}>
+                Privacy Settings
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={theme.text + '60'} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.actionItem}>
+            <View style={styles.actionInfo}>
               <Ionicons name="help-circle-outline" size={22} color={theme.primary} />
               <Text style={[styles.actionText, { color: theme.text }]}>
                 Help & Support
@@ -257,23 +284,19 @@ const ProfileScreen = () => {
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.text + '60'} />
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.actionItem, { borderBottomWidth: 0 }]}
-            onPress={handleLogout}
-          >
-            <View style={styles.actionInfo}>
-              <Ionicons name="log-out-outline" size={22} color="#ef4444" />
-              <Text style={[styles.actionText, { color: '#ef4444' }]}>
-                Log Out
-              </Text>
-            </View>
-          </TouchableOpacity>
         </Card>
-
-        <View style={styles.versionContainer}>
+        
+        {/* Logout Button */}
+        <Button
+          title="Logout"
+          onPress={handleLogout}
+          style={[styles.logoutButton, { backgroundColor: theme.error }]}
+          textStyle={{ color: '#ffffff' }}
+        />
+        
+        <View style={styles.versionInfo}>
           <Text style={[styles.versionText, { color: theme.text + '60' }]}>
-            Rick&Morty v1.0.0
+            Version 1.0.0
           </Text>
         </View>
       </ScrollView>
@@ -287,37 +310,40 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: 16,
+    padding: 16,
   },
   profileCard: {
-    marginTop: 8,
     marginBottom: 16,
   },
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   avatar: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#e5e7eb',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 16,
   },
   profileInfo: {
     flex: 1,
-    marginLeft: 16,
   },
   username: {
     fontSize: 20,
     fontWeight: 'bold',
+    marginBottom: 4,
   },
   memberSince: {
     fontSize: 14,
-    marginTop: 2,
   },
   editButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
   statsRow: {
     flexDirection: 'row',
@@ -328,23 +354,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
+    marginBottom: 4,
   },
   statLabel: {
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 14,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   switchLabel: {
     flex: 1,
@@ -353,30 +379,34 @@ const styles = StyleSheet.create({
   switchTitle: {
     fontSize: 16,
     fontWeight: '500',
+    marginBottom: 4,
   },
   switchDescription: {
     fontSize: 14,
-    marginTop: 2,
   },
   actionItem: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: 12,
-    borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,0,0,0.05)',
+    borderBottomWidth: 1,
   },
   actionInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   actionText: {
-    fontSize: 16,
     marginLeft: 12,
+    fontSize: 16,
   },
-  versionContainer: {
+  logoutButton: {
+    marginTop: 24,
+    marginBottom: 16,
+  },
+  versionInfo: {
     alignItems: 'center',
-    paddingVertical: 24,
+    marginBottom: 24,
   },
   versionText: {
     fontSize: 14,

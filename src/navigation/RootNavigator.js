@@ -1,68 +1,76 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Screens
-import OnboardingScreen from '../pages/Auth/OnboardingScreen';
 
 // Navigation
 import AppNavigator from './AppNavigator';
 import AuthNavigator from './AuthNavigator';
 
-// Context
-import { AppContext, APP_MODES } from '../services/AppContext';
+// Global navigation reference
+import { setNavigationRef } from '../services/AppContext';
 
 const RootNavigator = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isFirstLaunch, setIsFirstLaunch] = useState(null);
-  const { currentMode } = React.useContext(AppContext);
+  const [isAuthenticated, setIsAuthenticated] = useState(true); // Always set to true to show HomeScreen directly
+  const navigationRef = useRef(null);
 
+  // Set up the navigation reference
   useEffect(() => {
-    // Check if user is authenticated
-    const checkAuth = async () => {
+    if (navigationRef.current) {
+      setNavigationRef(navigationRef.current);
+    }
+  }, [navigationRef.current]);
+
+  // Set token on app start to ensure user is "logged in"
+  useEffect(() => {
+    const setInitialToken = async () => {
       try {
-        const userToken = await AsyncStorage.getItem('userToken');
-        const firstLaunch = await AsyncStorage.getItem('firstLaunch');
+        // Always set a token to ensure we're authenticated
+        await AsyncStorage.setItem('userToken', 'demo-token');
+        console.log('Token set - ensuring HomeScreen shows directly');
         
-        if (firstLaunch === null) {
-          setIsFirstLaunch(true);
-          await AsyncStorage.setItem('firstLaunch', 'false');
-        } else {
-          setIsFirstLaunch(false);
-        }
-        
-        if (userToken) {
-          console.log('User is authenticated with token:', userToken);
-          setIsAuthenticated(true);
-        } else {
-          console.log('No authentication token found');
-          setIsAuthenticated(false);
-        }
-        
+        setIsAuthenticated(true);
         setIsLoading(false);
       } catch (error) {
-        console.log('Error checking auth:', error);
+        console.error('Error setting token:', error);
+        // Even if there's an error, still show HomeScreen
+        setIsAuthenticated(true);
         setIsLoading(false);
       }
     };
 
-    checkAuth();
+    setInitialToken();
   }, []);
 
   if (isLoading) {
-    // You could add a loading screen here
-    return null;
-  }
-
-  // First time user - show onboarding
-  if (isFirstLaunch) {
-    return <OnboardingScreen onDone={() => setIsFirstLaunch(false)} />;
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#8b5cf6" />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
   }
 
   return (
-    isAuthenticated ? <AppNavigator /> : <AuthNavigator />
+    <NavigationContainer ref={navigationRef}>
+      <AppNavigator />
+    </NavigationContainer>
   );
 };
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#8b5cf6',
+    fontSize: 16,
+  }
+});
 
 export default RootNavigator; 

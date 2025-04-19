@@ -1,6 +1,5 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import { NavigationContainer } from '@react-navigation/native';
 
 // Auth Screens
 import LoginScreen from '../pages/Auth/LoginScreen';
@@ -9,7 +8,7 @@ import OnboardingScreen from '../pages/Auth/OnboardingScreen';
 
 const Stack = createStackNavigator();
 
-const AuthStack = () => {
+const AuthNavigator = () => {
   return (
     <Stack.Navigator 
       screenOptions={{ 
@@ -23,14 +22,6 @@ const AuthStack = () => {
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
     </Stack.Navigator>
-  );
-};
-
-const AuthNavigator = () => {
-  return (
-    <NavigationContainer>
-      <AuthStack />
-    </NavigationContainer>
   );
 };
 
