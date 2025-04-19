@@ -10,6 +10,7 @@ import HabitsScreen from '../pages/Home/HabitsScreen';
 import StatsScreen from '../pages/Home/StatsScreen';
 import ProfileScreen from '../pages/Home/ProfileScreen';
 import SettingsScreen from '../pages/Home/SettingsScreen';
+import CommunityScreen from '../pages/Home/CommunityScreen';
 
 // Context
 import { AppContext, APP_MODES } from '../services/AppContext';
@@ -36,6 +37,15 @@ const HabitsStack = () => {
   );
 };
 
+// CommunityStack - For the community feed
+const CommunityStack = () => {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="CommunityMain" component={CommunityScreen} />
+    </Stack.Navigator>
+  );
+};
+
 // Tab Navigator
 const AppNavigator = () => {
   const { theme, currentMode } = useContext(AppContext);
@@ -52,6 +62,8 @@ const AppNavigator = () => {
             iconName = focused ? 'list' : 'list-outline';
           } else if (route.name === 'Stats') {
             iconName = focused ? 'stats-chart' : 'stats-chart-outline';
+          } else if (route.name === 'Community') {
+            iconName = focused ? 'people' : 'people-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -96,6 +108,14 @@ const AppNavigator = () => {
         component={StatsScreen} 
         options={{
           tabBarLabel: 'Stats'
+        }}
+      />
+      <Tab.Screen 
+        name="Community" 
+        component={CommunityStack} 
+        options={{
+          tabBarLabel: 'Community',
+          tabBarBadge: 3, // Show a notification badge for new content
         }}
       />
       <Tab.Screen 
